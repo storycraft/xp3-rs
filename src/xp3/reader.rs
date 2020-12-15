@@ -8,7 +8,7 @@ use std::io::{Read, Seek, SeekFrom};
 
 use byteorder::{ReadBytesExt, LittleEndian};
 
-use super::{XP3Error, XP3ErrorKind, XP3_MAGIC, archive::XP3Archive, file_index::XP3FileIndexSet, header::{XP3Header, XP3HeaderVersion}};
+use super::{XP3Error, XP3ErrorKind, XP3_MAGIC, archive::XP3Archive, header::{XP3Header, XP3HeaderVersion}, index_set::XP3FileIndexSet};
 
 pub struct XP3Reader;
 
@@ -37,12 +37,12 @@ impl XP3Reader {
         }?;
         stream.seek(SeekFrom::Start(current + index_offset))?;
 
-        let (_, file_index_set) = XP3FileIndexSet::from_bytes(&mut stream)?;
+        let (_, index_set) = XP3FileIndexSet::from_bytes(&mut stream)?;
 
         // Reset read position to start.
         stream.seek(SeekFrom::Start(current))?;
 
-        Ok(XP3Archive::new(header, file_index_set, stream))
+        Ok(XP3Archive::new(header, index_set, stream))
     }
 
     /// Check if stream is valid xp3 archive or not.

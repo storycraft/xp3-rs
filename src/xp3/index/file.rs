@@ -4,13 +4,171 @@
  * Copyright (c) storycraft. Licensed under the MIT Licence.
  */
 
-use std::io::{Read, Write};
+use std::io::{Cursor, Read, Write};
 
 use byteorder::LittleEndian;
 use encoding::{DecoderTrap, EncoderTrap, Encoding, all::UTF_16LE};
 
-use crate::xp3::{XP3Error, XP3ErrorKind};
+use crate::xp3::{XP3Error, XP3ErrorKind, XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_INFO_IDENTIFIER, XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER};
 use byteorder::{ReadBytesExt, WriteBytesExt};
+
+use super::XP3Index;
+
+#[derive(Debug, Copy, Clone)]
+#[repr(u8)]
+pub enum XP3FileIndexCompression {
+
+    UnCompressed = 0,
+
+    Compressed = 1
+
+}
+ 
+/// FileIndex for xp3 archive.
+/// Contains information about file and data offsets.
+#[derive(Debug, Clone)]
+pub struct XP3FileIndex {
+
+    info: XP3FileIndexInfo,
+    segments: Vec<XP3FileIndexSegment>,
+    adler: XP3FileIndexAdler,
+    time: Option<XP3FileIndexTime>
+
+}
+
+impl XP3FileIndex {
+
+    pub fn new(
+        info: XP3FileIndexInfo,
+        segments: Vec<XP3FileIndexSegment>,
+        adler: XP3FileIndexAdler,
+        time: Option<XP3FileIndexTime>
+    ) -> Self {
+        Self {
+            info,
+            segments,
+            adler,
+            time
+        }
+    }
+
+    /// File time
+    pub fn time(&self) -> Option<XP3FileIndexTime> {
+        self.time
+    }
+
+    /// File adler hash
+    pub fn adler(&self) -> XP3FileIndexAdler {
+        self.adler
+    }
+
+    /// File information
+    pub fn info(&self) -> &XP3FileIndexInfo {
+        &self.info
+    }
+
+    /// File segments
+    pub fn segments(&self) -> &Vec<XP3FileIndexSegment> {
+        &self.segments
+    }
+
+    /// Read xp3 file index from stream.
+    /// Returns read size, XP3FileIndex tuple.
+    pub fn from_bytes<T: Read>(file_size: u64, stream: &mut T) -> Result<(u64, Self), XP3Error> {
+        let mut info: Option<XP3FileIndexInfo> = None;
+        let mut segm: Option<Vec<XP3FileIndexSegment>> = None;
+        let mut time: Option<XP3FileIndexTime> = None;
+        let mut adler32: Option<XP3FileIndexAdler> = None;
+
+        let mut total_read: u64 = 0;
+        while total_read < file_size {
+            let (read, index) = XP3Index::from_bytes(stream)?;
+            
+            let mut data_stream = Cursor::new(index.data());
+
+            match index.identifier() {
+
+                XP3_INDEX_INFO_IDENTIFIER => {
+                    if info.is_some() {
+                        return Err(XP3Error::new(XP3ErrorKind::InvalidFileIndex, None));
+                    }
+
+                    info = Some(XP3FileIndexInfo::from_bytes(&mut data_stream)?.1);
+                },
+
+                XP3_INDEX_SEGM_IDENTIFIER => {
+                    if segm.is_some() {
+                        return Err(XP3Error::new(XP3ErrorKind::InvalidFileIndex, None));
+                    }
+
+                    let count = data_stream.get_ref().len() / 28;
+
+                    let mut list: Vec<XP3FileIndexSegment> = Vec::new();
+                    for _ in 0..count {
+                        list.push(XP3FileIndexSegment::from_bytes(&mut data_stream)?.1);
+                    }
+
+                    segm = Some(list);
+                },
+
+                XP3_INDEX_ADLR_IDENTIFIER => {
+                    adler32 = Some(XP3FileIndexAdler::from_bytes(&mut data_stream)?.1);
+                },
+
+                XP3_INDEX_TIME_IDENTIFIER => {
+                    time = Some(XP3FileIndexTime::from_bytes(&mut data_stream)?.1);
+                },
+                
+                _ => {
+                    // SKIP infos we don't know yet.
+                }
+            }
+
+            
+            total_read += read;
+        }
+
+        if info.is_none() || adler32.is_none() || segm.is_none() {
+            return Err(XP3Error::new(XP3ErrorKind::InvalidFileIndex, None));
+        }
+
+        Ok((total_read, XP3FileIndex::new(info.unwrap(), segm.unwrap(), adler32.unwrap(), time)))
+    }
+
+    /// Write xp3 file index to stream.
+    pub fn write_bytes<T: Write>(&self, stream: &mut T) -> Result<u64, XP3Error> {
+        let mut written = 0_u64;
+        {
+            let mut buffer = Vec::<u8>::new();
+            self.adler.write_bytes(&mut buffer)?;
+            written += XP3Index::new(XP3_INDEX_ADLR_IDENTIFIER, buffer).write_bytes(stream)?;
+        }
+
+        if self.time.is_some() {
+            let mut buffer = Vec::<u8>::new();
+            self.time.unwrap().write_bytes(&mut buffer)?;
+            written += XP3Index::new(XP3_INDEX_TIME_IDENTIFIER, buffer).write_bytes(stream)?;
+        }
+
+        {
+            let mut buffer = Vec::<u8>::new();
+            self.info.write_bytes(&mut buffer)?;
+            written += XP3Index::new(XP3_INDEX_INFO_IDENTIFIER, buffer).write_bytes(stream)?;
+        }
+
+        {
+            let mut buffer = Vec::<u8>::new();
+            for segment in self.segments.iter() {
+                segment.write_bytes(&mut buffer)?;
+            }
+
+            written += XP3Index::new(XP3_INDEX_SEGM_IDENTIFIER, buffer).write_bytes(stream)?;
+        }
+
+        Ok(written)
+    }
+
+}
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u32)]

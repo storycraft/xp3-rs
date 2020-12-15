@@ -9,7 +9,8 @@ pub mod reader;
 pub mod writer;
 
 pub mod header;
-pub mod file_index;
+pub mod index;
+pub mod index_set;
 
 use std::{error::Error, io};
 

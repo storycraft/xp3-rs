@@ -8,7 +8,7 @@ use std::{cell::RefCell, collections::hash_map::Iter, io::{self, Read, Seek, See
 
 use flate2::read::ZlibDecoder;
 
-use super::{XP3Error, XP3ErrorKind, file_index::{XP3FileIndex, XP3FileIndexSet, fragments::IndexSegmentFlag}, header::XP3Header};
+use super::{XP3Error, XP3ErrorKind, header::XP3Header, index::file::{XP3FileIndex, IndexSegmentFlag}, index_set::XP3FileIndexSet};
 
 /// An XP3 archive with header, index, data part stream.
 /// Only contains header, index info and the read only occur when user request.
