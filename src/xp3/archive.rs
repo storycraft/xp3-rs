@@ -4,9 +4,9 @@
  * Copyright (c) storycraft. Licensed under the MIT Licence.
  */
 
-use std::io::{self, Read, Seek, SeekFrom};
+use std::{io::{self, Read, Seek, SeekFrom}, iter::Map, slice::Iter};
 
-use super::{file_index::XP3FileIndexSet, header::XP3Header};
+use super::{file_index::{XP3FileIndex, XP3FileIndexSet}, header::XP3Header};
 
 /// An XP3 archive with header, index, data part stream.
 /// Only contains header, index info and the read only occur when user request.
@@ -56,7 +56,6 @@ impl<T: Read + Seek> XP3Archive<T> {
     }
 }
 
-
 #[derive(Debug)]
 pub struct XP3DataStream<T: Read + Seek> {
 
@@ -72,7 +71,7 @@ impl<T: Read + Seek> XP3DataStream<T> {
         }
     }
 
-    pub fn read_exact_offset(&mut self, offset: u64, buf: &mut [u8]) -> io::Result<()> {
+    pub fn read_exact_pos_offset(&mut self, offset: u64, buf: &mut [u8]) -> io::Result<()> {
         let pos = self.data.seek(SeekFrom::Current(offset as i64))?;
         self.data.read_exact(buf)?;
         self.data.seek(SeekFrom::Start(pos - offset))?;
