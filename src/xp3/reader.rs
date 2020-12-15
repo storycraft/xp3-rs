@@ -20,6 +20,9 @@ impl XP3Reader {
 
         Self::check_archive(&mut stream)?;
 
+        // This is 0x01 currently
+        let _ = stream.read_u8()?;
+
         let (_, header) = XP3Header::from_bytes(&mut stream)?;
 
         // Move to index part
@@ -45,7 +48,7 @@ impl XP3Reader {
     /// Check if stream is valid xp3 archive or not.
     /// Will read 11 bytes from current position.
     pub fn check_archive<T: Read>(stream: &mut T) -> Result<(), XP3Error> {
-        let mut magic_buffer = [0_u8; 11];
+        let mut magic_buffer = [0_u8; 10];
 
         stream.read_exact(&mut magic_buffer)?;
 

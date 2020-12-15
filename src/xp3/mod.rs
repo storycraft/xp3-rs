@@ -13,7 +13,7 @@ pub mod file_index;
 
 use std::{error::Error, io};
 
-pub const XP3_MAGIC: [u8; 11] = [ 0x58_u8, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67, 0x01 ];
+pub const XP3_MAGIC: [u8; 10] = [ 0x58_u8, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67 ];
 
 pub const XP3_CURRENT_VER_IDENTIFIER: u64 = 0x17;
 
@@ -67,6 +67,8 @@ pub enum XP3ErrorKind {
     InvalidFile,
     InvalidHeader,
     InvalidFileIndexHeader,
-    InvalidFileIndex
+    InvalidFileIndex,
+
+    FileNotFound
 
 }
