@@ -32,7 +32,7 @@ mod tests {
 
         segments.push(
             Box::new(
-                StreamInput::new(IndexSegmentFlag::UnCompressed, sample)
+                StreamInput::new(IndexSegmentFlag::Compressed, sample)
             )
         );
 

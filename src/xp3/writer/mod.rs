@@ -8,6 +8,7 @@ pub mod entry;
 
 use std::{collections::HashMap, io::{Read, Seek, SeekFrom, Write}};
 
+use adler32::RollingAdler32;
 use byteorder::{WriteBytesExt, LittleEndian};
 use flate2::{Compression, read::ZlibEncoder};
 
@@ -94,10 +95,10 @@ impl XP3Writer {
 
         // Write segments stream and build index_set
         for entry in &mut self.entries {
-
             let mut saved_file_size = 0_u64;
             let mut file_size = 0_u64;
             let mut segments = Vec::<XP3FileIndexSegment>::new();
+            let mut adler = RollingAdler32::new();
 
             for entry_segment in entry.segments_mut() {
                 let mut data = entry_segment.write_data()?;
@@ -108,6 +109,7 @@ impl XP3Writer {
                 match entry_segment.flag() {
                     IndexSegmentFlag::UnCompressed => {
                         stream.write_all(&mut data)?;
+
                         written_size = data.len() as u64;
                     },
 
@@ -121,6 +123,8 @@ impl XP3Writer {
                         written_size = compressed.len() as u64;
                     }
                 }
+
+                adler.update_buffer(&data);
 
                 let segment = XP3FileIndexSegment::new(
                     entry_segment.flag(),
@@ -149,7 +153,7 @@ impl XP3Writer {
                     entry.name().clone()
                 ),
                 segments,
-                XP3FileIndexAdler::new(2),
+                XP3FileIndexAdler::new(adler.hash()),
                 time
             );
 
