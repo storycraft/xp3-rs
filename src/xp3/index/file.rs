@@ -14,16 +14,6 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use super::XP3Index;
 
-#[derive(Debug, Copy, Clone)]
-#[repr(u8)]
-pub enum XP3FileIndexCompression {
-
-    UnCompressed = 0,
-
-    Compressed = 1
-
-}
- 
 /// FileIndex for xp3 archive.
 /// Contains information about file and data offsets.
 #[derive(Debug, Clone)]

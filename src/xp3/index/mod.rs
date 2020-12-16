@@ -12,7 +12,7 @@ use super::XP3Error;
 
 pub mod file;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// General XP3 index
 pub struct XP3Index {
 

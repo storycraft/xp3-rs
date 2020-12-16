@@ -10,7 +10,7 @@ pub mod xp3;
 mod tests {
     use std::{fs::{self, File}, io::{BufReader, BufWriter}, path::Path};
 
-    use crate::xp3::reader::XP3Reader;
+    use crate::xp3::{header::XP3HeaderVersion, index::file::{IndexInfoFlag, IndexSegmentFlag, XP3FileIndexTime}, index_set::XP3IndexCompression, reader::XP3Reader, writer::{XP3Writer, entry::{StreamInput, WriteEntry, WriteInput}}};
 
     #[test]
     fn xp3_test() {
@@ -18,7 +18,38 @@ mod tests {
             
         let xp3 = XP3Reader::open_archive(stream).unwrap();
 
-        for (name, _) in xp3.entries() {
+        let sample = BufReader::new(File::open("Cargo.toml").unwrap());
+
+        let mut writer = XP3Writer::new(
+            XP3HeaderVersion::Current {
+                minor_version: 1,
+                index_size_offset: 0
+            },
+            XP3IndexCompression::Compressed
+        );
+
+        let mut segments: Vec<Box<dyn WriteInput>> = Vec::new();
+
+        segments.push(
+            Box::new(
+                StreamInput::new(IndexSegmentFlag::UnCompressed, sample)
+            )
+        );
+
+        writer.entries_mut().push(
+            WriteEntry::new(
+                IndexInfoFlag::Protected, 
+                "Cargo.toml".into(),
+                Some(0),
+                segments
+            )
+        );
+
+        let build = writer.build(&mut BufWriter::new(File::create("sample.xp3").unwrap())).unwrap();
+
+        println!("Written: {:?}", build);
+
+        /*for (name, _) in xp3.entries() {
             let save_name = if name.len() < 50 {
                 name
             } else {
@@ -32,7 +63,7 @@ mod tests {
             fs::create_dir_all(path.parent().unwrap()).unwrap();
 
             xp3.unpack(&name.into(), &mut BufWriter::new(File::create(path).unwrap())).unwrap();
-        }
+        }*/
 
     }
 }

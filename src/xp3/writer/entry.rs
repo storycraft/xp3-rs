@@ -4,18 +4,15 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::io::{Read, Seek, Write};
+use std::io::{Read, Seek};
 
 use crate::xp3::{XP3Error, index::file::{IndexInfoFlag, IndexSegmentFlag, XP3FileIndexSegment}, reader::XP3Reader};
-
-use byteorder::WriteBytesExt;
 
 pub trait WriteInput {
 
     fn flag(&self) -> IndexSegmentFlag;
 
-    /// Returns written size
-    fn write_data(&mut self, stream: &mut Box<dyn Write>) -> Result<u64, XP3Error>;
+    fn write_data(&mut self) -> Result<Vec<u8>, XP3Error>;
 
 }
 
@@ -74,20 +71,23 @@ impl WriteEntry {
         &self.segments
     }
 
+    pub fn segments_mut(&mut self) -> &mut Vec<Box<dyn WriteInput>> {
+        &mut self.segments
+    }
 }
 
-pub struct StreamInput<'a, T: Read> {
+pub struct StreamInput<T: Read> {
 
     flag: IndexSegmentFlag,
-    stream: &'a mut T
+    stream: T
 
 }
 
-impl<'a, T: Read> StreamInput<'a, T> {
+impl<T: Read> StreamInput<T> {
 
     pub fn new(
         flag: IndexSegmentFlag,
-        stream: &'a mut T
+        stream: T
     ) -> Self {
         Self {
             flag,
@@ -105,21 +105,18 @@ impl<'a, T: Read> StreamInput<'a, T> {
 
 }
 
-impl<'a, T: Read> WriteInput for StreamInput<'a, T> {
+impl<T: Read> WriteInput for StreamInput<T> {
 
     fn flag(&self) -> IndexSegmentFlag {
         self.flag
     }
 
-    fn write_data(&mut self, stream: &mut Box<dyn Write>) -> Result<u64, XP3Error> {
-        let mut written = 0_u64;
-        for byte in self.stream.bytes() {
-            stream.write_u8(byte?)?;
+    fn write_data(&mut self) -> Result<Vec<u8>, XP3Error> {
+        let mut data = Vec::new();
+        
+        self.stream.read_to_end(&mut data)?;
 
-            written += 1;
-        }
-
-        Ok(written)
+        Ok(data)
     }
 }
 
@@ -152,10 +149,12 @@ impl<'a, T: Seek + Read> WriteInput for FileSegmentInput<'a, T> {
         self.flag
     }
 
-    fn write_data(&mut self, stream: &mut Box<dyn Write>) -> Result<u64, XP3Error> {
-        XP3Reader::read_segment(self.segment, self.stream, stream)?;
+    fn write_data(&mut self) -> Result<Vec<u8>, XP3Error> {
+        let mut data = Vec::with_capacity(self.segment.original_size() as usize);
 
-        Ok(self.segment.original_size())
+        XP3Reader::read_segment(self.segment, self.stream, &mut data)?;
+
+        Ok(data)
     }
 
 }

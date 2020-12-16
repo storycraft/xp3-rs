@@ -9,14 +9,24 @@ use std::{collections::{HashMap, hash_map::{Iter, Values}}, io::{Cursor, Read, W
 use byteorder::LittleEndian;
 use flate2::{Compression, read::{ZlibDecoder, ZlibEncoder}};
 
-use super::{XP3Error, XP3ErrorKind, XP3_INDEX_FILE_IDENTIFIER, index::{XP3Index, file::{XP3FileIndex, XP3FileIndexCompression}}};
+use super::{XP3Error, XP3ErrorKind, XP3_INDEX_FILE_IDENTIFIER, index::{XP3Index, file::XP3FileIndex}};
 
 use byteorder::{WriteBytesExt, ReadBytesExt};
+
+#[derive(Debug, Copy, Clone)]
+#[repr(u8)]
+pub enum XP3IndexCompression {
+
+    UnCompressed = 0,
+
+    Compressed = 1
+
+}
 
 #[derive(Debug)]
 pub struct XP3IndexSet {
 
-    compression: XP3FileIndexCompression,
+    compression: XP3IndexCompression,
 
     extra: Vec<XP3Index>,
 
@@ -27,7 +37,7 @@ pub struct XP3IndexSet {
 impl XP3IndexSet {
 
     pub fn new(
-        compression: XP3FileIndexCompression,
+        compression: XP3IndexCompression,
         extra: Vec<XP3Index>,
         file_map: HashMap<String, XP3FileIndex>
     ) -> Self {
@@ -38,11 +48,11 @@ impl XP3IndexSet {
         }
     }
 
-    pub fn compression(&self) -> XP3FileIndexCompression {
+    pub fn compression(&self) -> XP3IndexCompression {
         self.compression
     }
 
-    pub fn set_compression(&mut self, compression: XP3FileIndexCompression) {
+    pub fn set_compression(&mut self, compression: XP3IndexCompression) {
         self.compression = compression;
     }
 
@@ -67,11 +77,11 @@ impl XP3IndexSet {
         let flag = {
             let raw_flag = stream.read_u8()?;
 
-            if raw_flag == XP3FileIndexCompression::UnCompressed as u8 {
-                Ok(XP3FileIndexCompression::UnCompressed)
+            if raw_flag == XP3IndexCompression::UnCompressed as u8 {
+                Ok(XP3IndexCompression::UnCompressed)
             // Compressed
-            } else if raw_flag == XP3FileIndexCompression::Compressed as u8 {
-                Ok(XP3FileIndexCompression::Compressed)
+            } else if raw_flag == XP3IndexCompression::Compressed as u8 {
+                Ok(XP3IndexCompression::Compressed)
             // Unknown
             } else {
                 Err(XP3Error::new(XP3ErrorKind::InvalidFileIndexHeader, None))
@@ -82,7 +92,7 @@ impl XP3IndexSet {
         let index_size: u64;
         let raw_index_read: u64;
         match flag {
-            XP3FileIndexCompression::UnCompressed => {
+            XP3IndexCompression::UnCompressed => {
                 index_size = stream.read_u64::<LittleEndian>()?;
 
                 let mut data = Vec::<u8>::with_capacity(index_size as usize);
@@ -92,7 +102,7 @@ impl XP3IndexSet {
                 raw_index_read = index_size;
             },
 
-            XP3FileIndexCompression::Compressed => {
+            XP3IndexCompression::Compressed => {
                 let compressed_size = stream.read_u64::<LittleEndian>()?;
                 index_size = stream.read_u64::<LittleEndian>()?;
 
@@ -155,13 +165,13 @@ impl XP3IndexSet {
         }
 
         match self.compression {
-            XP3FileIndexCompression::UnCompressed => {
+            XP3IndexCompression::UnCompressed => {
                 stream.write_all(index_buffer.get_mut())?;
 
                 Ok(1 + index_buffer.into_inner().len() as u64)
             },
 
-            XP3FileIndexCompression::Compressed => {
+            XP3IndexCompression::Compressed => {
                 let mut compressed_data = Vec::<u8>::new();
 
                 // Reset read stream
