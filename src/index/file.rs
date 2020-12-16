@@ -128,11 +128,6 @@ impl XP3FileIndex {
     /// Write xp3 file index to stream.
     pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         let mut written = 0_u64;
-        {
-            let mut buffer = Vec::<u8>::new();
-            self.adler.write_bytes(&mut buffer)?;
-            written += XP3Index { identifier: XP3_INDEX_ADLR_IDENTIFIER, data: buffer }.write_bytes(stream)?;
-        }
 
         if self.time.is_some() {
             let mut buffer = Vec::<u8>::new();
@@ -142,8 +137,8 @@ impl XP3FileIndex {
 
         {
             let mut buffer = Vec::<u8>::new();
-            self.info.write_bytes(&mut buffer)?;
-            written += XP3Index { identifier: XP3_INDEX_INFO_IDENTIFIER, data: buffer }.write_bytes(stream)?;
+            self.adler.write_bytes(&mut buffer)?;
+            written += XP3Index { identifier: XP3_INDEX_ADLR_IDENTIFIER, data: buffer }.write_bytes(stream)?;
         }
 
         {
@@ -153,6 +148,12 @@ impl XP3FileIndex {
             }
 
             written += XP3Index { identifier: XP3_INDEX_SEGM_IDENTIFIER, data: buffer }.write_bytes(stream)?;
+        }
+
+        {
+            let mut buffer = Vec::<u8>::new();
+            self.info.write_bytes(&mut buffer)?;
+            written += XP3Index { identifier: XP3_INDEX_INFO_IDENTIFIER, data: buffer }.write_bytes(stream)?;
         }
 
         Ok(written)
