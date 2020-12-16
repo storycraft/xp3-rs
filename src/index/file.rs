@@ -9,7 +9,7 @@ use std::io::{Cursor, Read, Write};
 use byteorder::LittleEndian;
 use encoding::{DecoderTrap, EncoderTrap, Encoding, all::UTF_16LE};
 
-use crate::xp3::{XP3Error, XP3ErrorKind, XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_INFO_IDENTIFIER, XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER};
+use crate::{XP3Error, XP3ErrorKind, XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_INFO_IDENTIFIER, XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 use super::XP3Index;
