@@ -10,7 +10,7 @@ pub mod xp3;
 mod tests {
     use std::{fs::{self, File}, io::{BufReader, BufWriter}, path::Path};
 
-    use crate::xp3::{header::XP3HeaderVersion, index::file::{IndexInfoFlag, IndexSegmentFlag, XP3FileIndexTime}, index_set::XP3IndexCompression, reader::XP3Reader, writer::{XP3Writer, entry::{StreamInput, WriteEntry, WriteInput}}};
+    use crate::xp3::{header::XP3HeaderVersion, index::file::{IndexInfoFlag, IndexSegmentFlag, XP3FileIndexTime}, index_set::XP3IndexCompression, reader::XP3Reader, writer::XP3Writer};
 
     #[test]
     fn xp3_test() {

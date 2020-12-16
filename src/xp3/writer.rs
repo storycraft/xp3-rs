@@ -4,8 +4,6 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-pub mod entry;
-
 use std::{collections::HashMap, io::{Read, Seek, SeekFrom, Write}};
 
 use adler32::RollingAdler32;
