@@ -1,7 +1,7 @@
 /*
  * Created on Tue Dec 15 2020
  *
- * Copyright (c) storycraft. Licensed under the MIT Licence.
+ * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
 use std::io::{Read, Seek, SeekFrom, Write};

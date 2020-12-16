@@ -1,7 +1,7 @@
 /*
  * Created on Tue Dec 15 2020
  *
- * Copyright (c) storycraft. Licensed under the MIT Licence.
+ * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
 use std::{collections::{HashMap, hash_map::{Iter, Values}}, io::{Cursor, Read, Write}};
@@ -14,27 +14,27 @@ use super::{XP3Error, XP3ErrorKind, XP3_INDEX_FILE_IDENTIFIER, index::{XP3Index,
 use byteorder::{WriteBytesExt, ReadBytesExt};
 
 #[derive(Debug)]
-pub struct XP3FileIndexSet {
+pub struct XP3IndexSet {
 
     compression: XP3FileIndexCompression,
 
     extra: Vec<XP3Index>,
 
-    indices: HashMap<String, XP3FileIndex>
+    file_map: HashMap<String, XP3FileIndex>
 
 }
 
-impl XP3FileIndexSet {
+impl XP3IndexSet {
 
     pub fn new(
         compression: XP3FileIndexCompression,
         extra: Vec<XP3Index>,
-        indices: HashMap<String, XP3FileIndex>
+        file_map: HashMap<String, XP3FileIndex>
     ) -> Self {
         Self {
             compression,
             extra,
-            indices
+            file_map
         }
     }
 
@@ -47,7 +47,7 @@ impl XP3FileIndexSet {
     }
 
     pub fn indices(&self) -> Values<String, XP3FileIndex> {
-        self.indices.values()
+        self.file_map.values()
     }
 
     pub fn extra(&self) -> &Vec<XP3Index> {
@@ -55,11 +55,11 @@ impl XP3FileIndexSet {
     }
 
     pub fn entries(&self) -> Iter<String, XP3FileIndex> {
-        self.indices.iter()
+        self.file_map.iter()
     }
 
     pub fn get(&self, name: &String) -> Option<&XP3FileIndex> {
-        self.indices.get(name)
+        self.file_map.get(name)
     }
 
     /// Read xp3 file index set from stream.
@@ -148,10 +148,9 @@ impl XP3FileIndexSet {
             extra_index.write_bytes(&mut index_buffer)?;
         }
 
-        for index in self.indices.values() {
+        for index in self.file_map.values() {
             let mut buffer = Vec::<u8>::new();
             index.write_bytes(&mut buffer)?;
-            
             XP3Index::new(XP3_INDEX_FILE_IDENTIFIER, buffer).write_bytes(&mut index_buffer)?;
         }
 

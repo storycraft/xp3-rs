@@ -1,7 +1,7 @@
 /*
  * Created on Mon Dec 14 2020
  *
- * Copyright (c) storycraft. Licensed under the MIT Licence.
+ * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
 pub mod archive;
@@ -13,6 +13,8 @@ pub mod index;
 pub mod index_set;
 
 use std::{error::Error, io};
+
+use self::{header::XP3Header, index_set::XP3IndexSet};
 
 pub const XP3_MAGIC: [u8; 10] = [ 0x58_u8, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67 ];
 
@@ -71,5 +73,48 @@ pub enum XP3ErrorKind {
     InvalidFileIndex,
 
     FileNotFound
+
+}
+
+/// Virtual XP3 container containing XP3 file information.
+#[derive(Debug)]
+pub struct VirtualXP3 {
+
+    header: XP3Header,
+    index_set: XP3IndexSet
+
+}
+
+impl VirtualXP3 {
+
+    pub fn new(
+        header: XP3Header,
+        index_set: XP3IndexSet
+    ) -> Self {
+        Self {
+            header,
+            index_set
+        }
+    }
+
+    pub fn header(&self) -> XP3Header {
+        self.header
+    }
+
+    pub fn set_header(&mut self, header: XP3Header) {
+        self.header = header;
+    }
+
+    pub fn index_set(&self) -> &XP3IndexSet {
+        &self.index_set
+    }
+
+    pub fn index_set_mut(&mut self) -> &mut XP3IndexSet {
+        &mut self.index_set
+    }
+
+    pub fn set_index_set(&mut self, index_set: XP3IndexSet) {
+        self.index_set = index_set;
+    }
 
 }

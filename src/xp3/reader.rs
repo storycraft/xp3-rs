@@ -1,29 +1,35 @@
 /*
  * Created on Mon Dec 14 2020
  *
- * Copyright (c) storycraft. Licensed under the MIT Licence.
+ * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom, Write};
 
 use byteorder::{ReadBytesExt, LittleEndian};
+use flate2::read::ZlibDecoder;
 
-use super::{XP3Error, XP3ErrorKind, XP3_MAGIC, archive::XP3Archive, header::{XP3Header, XP3HeaderVersion}, index_set::XP3FileIndexSet};
+use super::{VirtualXP3, XP3Error, XP3ErrorKind, XP3_MAGIC, archive::XP3Archive, header::{XP3Header, XP3HeaderVersion}, index::file::{IndexSegmentFlag, XP3FileIndexSegment}, index_set::XP3IndexSet};
 
 pub struct XP3Reader;
 
 impl XP3Reader {
 
-    /// Reads XP3 archive and returns XP3Archive struct.
-    pub fn read_archive<T: Read + Seek>(mut stream: T) -> Result<XP3Archive<T>, XP3Error> {
+    /// Open XP3 archive.
+    pub fn open_archive<T: Read + Seek>(mut stream: T) -> Result<XP3Archive<T>, XP3Error> {
+        Ok(XP3Archive::new(Self::read_container(&mut stream)?, stream))
+    }
+
+    /// Read xp3 container using stream.
+    pub fn read_container<T: Read + Seek>(stream: &mut T) -> Result<VirtualXP3, XP3Error> {
         let current = stream.seek(SeekFrom::Current(0))?;
 
-        Self::check_archive(&mut stream)?;
+        Self::check_archive(stream)?;
 
         // This is 0x01 currently
         let _ = stream.read_u8()?;
 
-        let (_, header) = XP3Header::from_bytes(&mut stream)?;
+        let (_, header) = XP3Header::from_bytes(stream)?;
 
         // Move to index part
         let index_offset = match header.version() {
@@ -37,12 +43,40 @@ impl XP3Reader {
         }?;
         stream.seek(SeekFrom::Start(current + index_offset))?;
 
-        let (_, index_set) = XP3FileIndexSet::from_bytes(&mut stream)?;
+        let (_, index_set) = XP3IndexSet::from_bytes(stream)?;
 
         // Reset read position to start.
         stream.seek(SeekFrom::Start(current))?;
 
-        Ok(XP3Archive::new(header, index_set, stream))
+        Ok(VirtualXP3::new(header, index_set))
+    }
+
+    /// Read data from provided segment.
+    pub fn read_segment<O: Read + Seek, T: Write>(segment: &XP3FileIndexSegment, from: &mut O, stream: &mut T) -> Result<(), XP3Error> {
+        let read_size = segment.saved_size();
+        let read_offset = segment.data_offset();
+
+        let mut buffer = Vec::with_capacity(read_size as usize);
+
+        let pos = from.seek(SeekFrom::Current(read_offset as i64))?;
+        from.take(read_size).read_to_end(&mut buffer)?;
+        from.seek(SeekFrom::Start(pos - read_offset))?;
+
+        match segment.flag() {
+            IndexSegmentFlag::UnCompressed => stream.write_all(&mut buffer[..segment.saved_size() as usize])?,
+
+            IndexSegmentFlag::Compressed => {
+                let mut uncompressed = Vec::<u8>::with_capacity(segment.original_size() as usize);
+
+                let decoder = ZlibDecoder::new(&buffer[..]);
+
+                decoder.take(segment.original_size()).read_to_end(&mut uncompressed)?;
+
+                stream.write_all(&mut uncompressed)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Check if stream is valid xp3 archive or not.
