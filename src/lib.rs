@@ -5,6 +5,8 @@
  */
 
 //! A XP3(krkr) archive library for rust.
+//! ## Examples
+//! See `examples` directory for various code examples.
 
 pub mod archive;
 pub mod reader;
