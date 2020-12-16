@@ -74,9 +74,9 @@ impl XP3FileIndex {
         while total_read < file_size {
             let (read, index) = XP3Index::from_bytes(stream)?;
             
-            let mut data_stream = Cursor::new(index.data());
+            let mut data_stream = Cursor::new(&index.data);
 
-            match index.identifier() {
+            match index.identifier {
 
                 XP3_INDEX_INFO_IDENTIFIER => {
                     if info.is_some() {
@@ -131,19 +131,19 @@ impl XP3FileIndex {
         {
             let mut buffer = Vec::<u8>::new();
             self.adler.write_bytes(&mut buffer)?;
-            written += XP3Index::new(XP3_INDEX_ADLR_IDENTIFIER, buffer).write_bytes(stream)?;
+            written += XP3Index { identifier: XP3_INDEX_ADLR_IDENTIFIER, data: buffer }.write_bytes(stream)?;
         }
 
         if self.time.is_some() {
             let mut buffer = Vec::<u8>::new();
             self.time.unwrap().write_bytes(&mut buffer)?;
-            written += XP3Index::new(XP3_INDEX_TIME_IDENTIFIER, buffer).write_bytes(stream)?;
+            written += XP3Index { identifier: XP3_INDEX_TIME_IDENTIFIER, data: buffer }.write_bytes(stream)?;
         }
 
         {
             let mut buffer = Vec::<u8>::new();
             self.info.write_bytes(&mut buffer)?;
-            written += XP3Index::new(XP3_INDEX_INFO_IDENTIFIER, buffer).write_bytes(stream)?;
+            written += XP3Index { identifier: XP3_INDEX_INFO_IDENTIFIER, data: buffer }.write_bytes(stream)?;
         }
 
         {
@@ -152,7 +152,7 @@ impl XP3FileIndex {
                 segment.write_bytes(&mut buffer)?;
             }
 
-            written += XP3Index::new(XP3_INDEX_SEGM_IDENTIFIER, buffer).write_bytes(stream)?;
+            written += XP3Index { identifier: XP3_INDEX_SEGM_IDENTIFIER, data: buffer }.write_bytes(stream)?;
         }
 
         Ok(written)

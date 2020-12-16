@@ -16,35 +16,12 @@ pub mod file;
 /// General XP3 index
 pub struct XP3Index {
 
-    identifier: u32,
-    data: Vec<u8>
+    pub identifier: u32,
+    pub data: Vec<u8>
 
 }
 
 impl XP3Index {
-
-    pub fn new(identifier: u32, data: Vec<u8>) -> Self {
-        Self {
-            identifier,
-            data
-        }
-    }
-
-    pub fn identifier(&self) -> u32 {
-        self.identifier
-    }
-
-    pub fn set_identifier(&mut self, identifier: u32) {
-        self.identifier = identifier;
-    }
-
-    pub fn data(&self) -> &Vec<u8> {
-        &self.data
-    }
-
-    pub fn data_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.data
-    }
 
     /// Read xp3 index from stream.
     /// Returns read size, XP3Index tuple.
@@ -55,7 +32,7 @@ impl XP3Index {
 
         stream.take(size).read_to_end(&mut data)?;
 
-        Ok((12 + size, Self::new(identifier, data)))
+        Ok((12 + size, Self { identifier, data }))
     }
 
     /// Write xp3 index to stream.

@@ -139,12 +139,12 @@ impl XP3IndexSet {
 
         let mut index_read: u64 = 0;
         while index_read < index_size {
-            let (read, mut index) = XP3Index::from_bytes(&mut index_buffer)?;
+            let (read, index) = XP3Index::from_bytes(&mut index_buffer)?;
             
-            match index.identifier() {
+            match index.identifier {
 
                 XP3_INDEX_FILE_IDENTIFIER => {
-                    let (_, file_index) = XP3FileIndex::from_bytes(index.data().len() as u64, &mut Cursor::new(index.data_mut()))?;
+                    let (_, file_index) = XP3FileIndex::from_bytes(index.data.len() as u64, &mut Cursor::new(&index.data))?;
                     file_map.insert(file_index.info().name().clone(), file_index);
                 }
 
@@ -173,7 +173,7 @@ impl XP3IndexSet {
         for index in self.file_map.values() {
             let mut buffer = Vec::<u8>::new();
             index.write_bytes(&mut buffer)?;
-            XP3Index::new(XP3_INDEX_FILE_IDENTIFIER, buffer).write_bytes(&mut index_buffer)?;
+            XP3Index { identifier: XP3_INDEX_FILE_IDENTIFIER, data: buffer }.write_bytes(&mut index_buffer)?;
         }
 
         match self.compression {

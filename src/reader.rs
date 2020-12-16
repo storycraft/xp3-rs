@@ -31,16 +31,19 @@ impl XP3Reader {
 
         let (_, header) = XP3Header::from_bytes(stream)?;
 
-        // Move to index part
-        let index_offset = match header.version() {
-            XP3HeaderVersion::Old => Ok(0_u64),
+        match header.version() {
+            XP3HeaderVersion::Old => {
+                
+            }
 
             XP3HeaderVersion::Current { minor_version: _, index_size_offset } => {
                 stream.seek(SeekFrom::Current(index_size_offset as i64))?;
-
-                stream.read_u64::<LittleEndian>()
             }
-        }?;
+        }
+
+        // Move to index part
+        let index_offset = stream.read_u64::<LittleEndian>()?;
+
         stream.seek(SeekFrom::Start(current + index_offset))?;
 
         let (_, index_set) = XP3IndexSet::from_bytes(stream)?;
