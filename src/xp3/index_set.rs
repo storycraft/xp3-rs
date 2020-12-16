@@ -64,6 +64,18 @@ impl XP3IndexSet {
         &self.extra
     }
 
+    pub fn extra_mut(&mut self) -> &mut Vec<XP3Index> {
+        &mut self.extra
+    }
+
+    pub fn file_map(&self) -> &HashMap<String, XP3FileIndex> {
+        &self.file_map
+    }
+
+    pub fn file_map_mut(&mut self) -> &mut HashMap<String, XP3FileIndex> {
+        &mut self.file_map
+    }
+
     pub fn entries(&self) -> Iter<String, XP3FileIndex> {
         self.file_map.iter()
     }
@@ -73,7 +85,7 @@ impl XP3IndexSet {
     }
 
     /// Read xp3 file index set from stream.
-    pub fn from_bytes<T: Read>(stream: &mut T) -> Result<(u64, Self), XP3Error> {
+    pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
         let flag = {
             let raw_flag = stream.read_u8()?;
 
@@ -149,7 +161,7 @@ impl XP3IndexSet {
     }
 
     /// Write xp3 file index set to stream.
-    pub fn write_bytes<T: Write>(&mut self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&mut self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         stream.write_u8(self.compression as u8)?;
 
         let mut index_buffer = Cursor::new(Vec::<u8>::new());

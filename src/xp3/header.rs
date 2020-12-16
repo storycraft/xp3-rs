@@ -71,7 +71,7 @@ impl XP3Header {
 
     /// Write xp3 header to stream.
     /// Returns written size.
-    pub fn write_bytes<T: Write>(&self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         let ver_written: u64;
         match self.version {
             XP3HeaderVersion::Old => {

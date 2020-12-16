@@ -109,10 +109,6 @@ impl VirtualXP3 {
         &self.index_set
     }
 
-    pub fn index_set_mut(&mut self) -> &mut XP3IndexSet {
-        &mut self.index_set
-    }
-
     pub fn set_index_set(&mut self, index_set: XP3IndexSet) {
         self.index_set = index_set;
     }

@@ -48,7 +48,7 @@ impl XP3Index {
 
     /// Read xp3 index from stream.
     /// Returns read size, XP3Index tuple.
-    pub fn from_bytes<T: Read>(stream: &mut T) -> Result<(u64, Self), XP3Error> {
+    pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
         let identifier: u32 = stream.read_u32::<LittleEndian>()?;
         let size: u64 = stream.read_u64::<LittleEndian>()?;
         let mut data = Vec::<u8>::with_capacity(size as usize);
@@ -59,7 +59,7 @@ impl XP3Index {
     }
 
     /// Write xp3 index to stream.
-    pub fn write_bytes<T: Write>(&mut self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&mut self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         stream.write_u32::<LittleEndian>(self.identifier)?;
         let len = self.data.len() as u64;
         stream.write_u64::<LittleEndian>(len)?;

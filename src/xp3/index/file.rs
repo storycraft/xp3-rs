@@ -64,7 +64,7 @@ impl XP3FileIndex {
 
     /// Read xp3 file index from stream.
     /// Returns read size, XP3FileIndex tuple.
-    pub fn from_bytes<T: Read>(file_size: u64, stream: &mut T) -> Result<(u64, Self), XP3Error> {
+    pub fn from_bytes(file_size: u64, stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
         let mut info: Option<XP3FileIndexInfo> = None;
         let mut segm: Option<Vec<XP3FileIndexSegment>> = None;
         let mut time: Option<XP3FileIndexTime> = None;
@@ -126,7 +126,7 @@ impl XP3FileIndex {
     }
 
     /// Write xp3 file index to stream.
-    pub fn write_bytes<T: Write>(&self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         let mut written = 0_u64;
         {
             let mut buffer = Vec::<u8>::new();
@@ -229,7 +229,7 @@ impl XP3FileIndexInfo {
     }
 
     /// Read xp3 file index info from stream.
-    pub fn from_bytes<T: Read>(stream: &mut T) -> Result<(u64, Self), XP3Error> {
+    pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
         let flag = {
             let raw_flag = stream.read_u32::<LittleEndian>()?;
 
@@ -258,7 +258,7 @@ impl XP3FileIndexInfo {
 
     /// Write xp3 file index info to stream.
     /// Returns written size.
-    pub fn write_bytes<T: Write>(&self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         stream.write_u32::<LittleEndian>(self.flag as u32)?;
         
         stream.write_u64::<LittleEndian>(self.file_size)?;
@@ -341,7 +341,7 @@ impl XP3FileIndexSegment {
     }
 
     /// Read xp3 file index segment from stream.
-    pub fn from_bytes<T: Read>(stream: &mut T) -> Result<(u64, Self), XP3Error> {
+    pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
         let flag = {
             let raw_flag = stream.read_u32::<LittleEndian>()?;
 
@@ -363,7 +363,7 @@ impl XP3FileIndexSegment {
 
     /// Write xp3 file index segment to stream.
     /// Returns written size.
-    pub fn write_bytes<T: Write>(&self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         stream.write_u32::<LittleEndian>(self.flag as u32)?;
 
         stream.write_u64::<LittleEndian>(self.data_offset)?;
@@ -400,14 +400,14 @@ impl XP3FileIndexTime {
     }
 
     /// Read xp3 file index time from stream.
-    pub fn from_bytes<T: Read>(stream: &mut T) -> Result<(u64, Self), XP3Error> {
+    pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
         let timestamp = stream.read_u64::<LittleEndian>()?;
 
         Ok((8, Self::new(timestamp)))
     }
 
     /// Write xp3 file time to stream.
-    pub fn write_bytes<T: Write>(&self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         stream.write_u64::<LittleEndian>(self.timestamp)?;
 
         Ok(8)
@@ -440,14 +440,14 @@ impl XP3FileIndexAdler {
     }
 
     /// Read xp3 file index time from stream.
-    pub fn from_bytes<T: Read>(stream: &mut T) -> Result<(u64, Self), XP3Error> {
+    pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
         let checksum = stream.read_u32::<LittleEndian>()?;
 
         Ok((4, Self::new(checksum)))
     }
 
     /// Write xp3 file time to stream.
-    pub fn write_bytes<T: Write>(&self, stream: &mut T) -> Result<u64, XP3Error> {
+    pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         stream.write_u32::<LittleEndian>(self.checksum)?;
 
         Ok(4)

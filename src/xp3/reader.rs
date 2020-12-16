@@ -81,7 +81,7 @@ impl XP3Reader {
 
     /// Check if stream is valid xp3 archive or not.
     /// Will read 11 bytes from current position.
-    pub fn check_archive<T: Read>(stream: &mut T) -> Result<(), XP3Error> {
+    pub fn check_archive(stream: &mut impl Read) -> Result<(), XP3Error> {
         let mut magic_buffer = [0_u8; 10];
 
         stream.read_exact(&mut magic_buffer)?;

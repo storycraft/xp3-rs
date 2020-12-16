@@ -18,34 +18,28 @@ mod tests {
             
         let xp3 = XP3Reader::open_archive(stream).unwrap();
 
-        let sample = BufReader::new(File::open("Cargo.toml").unwrap());
+        let sample_xp3 = BufWriter::new(File::create("sample.xp3").unwrap());
+        let mut sample = BufReader::new(File::open("Cargo.toml").unwrap());
 
-        let mut writer = XP3Writer::new(
+        let mut writer = XP3Writer::start(
+            sample_xp3,
             XP3HeaderVersion::Current {
                 minor_version: 1,
                 index_size_offset: 0
             },
             XP3IndexCompression::Compressed
+        ).unwrap();
+
+        let mut entry = writer.enter_file(
+            IndexInfoFlag::Protected,
+            "Cargo.toml".into(),
+            Some(0)
         );
 
-        let mut segments: Vec<Box<dyn WriteInput>> = Vec::new();
+        entry.write_segment(IndexSegmentFlag::UnCompressed, &mut sample).unwrap();
+        entry.finish();
 
-        segments.push(
-            Box::new(
-                StreamInput::new(IndexSegmentFlag::Compressed, sample)
-            )
-        );
-
-        writer.entries_mut().push(
-            WriteEntry::new(
-                IndexInfoFlag::Protected, 
-                "Cargo.toml".into(),
-                Some(0),
-                segments
-            )
-        );
-
-        let build = writer.build(&mut BufWriter::new(File::create("sample.xp3").unwrap())).unwrap();
+        let (build, _) = writer.finish().unwrap();
 
         println!("Written: {:?}", build);
 
