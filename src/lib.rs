@@ -18,7 +18,7 @@ mod tests {
             
         let xp3 = XP3Reader::open_archive(stream).unwrap();
 
-        let sample_xp3 = BufWriter::new(File::create("sample.xp3").unwrap());
+        /*let sample_xp3 = BufWriter::new(File::create("sample.xp3").unwrap());
         let mut sample = BufReader::new(File::open("Cargo.toml").unwrap());
 
         let mut writer = XP3Writer::start(
@@ -41,9 +41,9 @@ mod tests {
 
         let (build, _) = writer.finish().unwrap();
 
-        println!("Written: {:?}", build);
+        println!("Written: {:?}", build);*/
 
-        /*for (name, _) in xp3.entries() {
+        for (name, _) in xp3.entries() {
             let save_name = if name.len() < 50 {
                 name
             } else {
@@ -57,7 +57,7 @@ mod tests {
             fs::create_dir_all(path.parent().unwrap()).unwrap();
 
             xp3.unpack(&name.into(), &mut BufWriter::new(File::create(path).unwrap())).unwrap();
-        }*/
+        }
 
     }
 }

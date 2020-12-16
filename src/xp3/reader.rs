@@ -4,7 +4,7 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 
 use byteorder::{ReadBytesExt, LittleEndian};
 use flate2::read::ZlibDecoder;
@@ -56,25 +56,21 @@ impl XP3Reader {
         let read_size = segment.saved_size();
         let read_offset = segment.data_offset();
 
-        let mut buffer = Vec::with_capacity(read_size as usize);
-
         let pos = from.seek(SeekFrom::Current(read_offset as i64))?;
-        from.take(read_size).read_to_end(&mut buffer)?;
-        from.seek(SeekFrom::Start(pos - read_offset))?;
 
         match segment.flag() {
-            IndexSegmentFlag::UnCompressed => stream.write_all(&mut buffer[..segment.saved_size() as usize])?,
+            IndexSegmentFlag::UnCompressed => {
+                io::copy(&mut from.take(read_size), stream)?;
+            },
 
             IndexSegmentFlag::Compressed => {
-                let mut uncompressed = Vec::<u8>::with_capacity(segment.original_size() as usize);
+                let decoder = ZlibDecoder::new(from.take(read_size));
 
-                let decoder = ZlibDecoder::new(&buffer[..]);
-
-                decoder.take(segment.original_size()).read_to_end(&mut uncompressed)?;
-
-                stream.write_all(&mut uncompressed)?;
+                io::copy(&mut decoder.take(segment.original_size()), stream)?;
             }
         }
+
+        from.seek(SeekFrom::Start(pos - read_offset))?;
 
         Ok(())
     }

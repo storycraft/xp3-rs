@@ -4,7 +4,7 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::{collections::HashMap, io::{Read, Seek, SeekFrom, Write}};
+use std::{collections::HashMap, io::{self, Read, Seek, SeekFrom, Write}};
 
 use adler32::RollingAdler32;
 use byteorder::{WriteBytesExt, LittleEndian};
