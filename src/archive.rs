@@ -37,7 +37,7 @@ impl<T: Read + Seek> XP3Archive<T> {
     }
 
     /// Unpack file to stream
-    pub fn unpack<W: Write>(&self, name: &String, stream: &mut W) -> Result<(), XP3Error> {
+    pub fn unpack(&self, name: &String, stream: &mut impl Write) -> Result<(), XP3Error> {
         let item = self.container.index_set().get(name);
 
         match item {
