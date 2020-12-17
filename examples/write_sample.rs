@@ -17,7 +17,7 @@ pub fn main() {
                 minor_version: 1,
                 index_size_offset: 0
             },
-            XP3IndexCompression::Compressed
+            XP3IndexCompression::UnCompressed
         ).unwrap();
 
         let mut entry = writer.enter_file(

@@ -267,7 +267,7 @@ impl XP3FileIndexInfo {
 
         let encoded = UTF_16LE.encode(&self.name, EncoderTrap::Replace).unwrap();
         let name_byte_size = encoded.len().min(65536);
-        stream.write_u16::<LittleEndian>(name_byte_size as u16)?;
+        stream.write_u16::<LittleEndian>((name_byte_size / 2) as u16)?;
         stream.write_all(&encoded[..name_byte_size])?;
 
         Ok(22 + name_byte_size as u64)
