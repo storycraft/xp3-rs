@@ -164,7 +164,7 @@ impl XP3IndexSet {
     pub fn write_bytes(&mut self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         stream.write_u8(self.compression as u8)?;
 
-        let mut index_buffer = Cursor::new(Vec::<u8>::new());
+        let mut index_buffer = Vec::<u8>::new();
 
         for extra_index in self.extra.iter_mut() {
             extra_index.write_bytes(&mut index_buffer)?;
@@ -178,16 +178,20 @@ impl XP3IndexSet {
 
         match self.compression {
             XP3IndexCompression::UnCompressed => {
-                stream.write_all(index_buffer.get_mut())?;
+                let size = index_buffer.len() as u64;
 
-                Ok(1 + index_buffer.into_inner().len() as u64)
+                stream.write_u64::<LittleEndian>(size)?;
+                
+                stream.write_all(&index_buffer)?;
+
+                Ok(9 + size)
             },
 
             XP3IndexCompression::Compressed => {
                 let mut compressed_data = Vec::<u8>::new();
 
                 // Reset read stream
-                let mut encoder = ZlibEncoder::new(Cursor::new(index_buffer.into_inner()), Compression::fast());
+                let mut encoder = ZlibEncoder::new(Cursor::new(index_buffer), Compression::fast());
 
                 encoder.read_to_end(&mut compressed_data)?;
 
@@ -196,7 +200,7 @@ impl XP3IndexSet {
 
                 stream.write_all(&mut compressed_data)?;
 
-                Ok(1 + compressed_data.len() as u64)   
+                Ok(17 + compressed_data.len() as u64)   
             }
         }
     }
