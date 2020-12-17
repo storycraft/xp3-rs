@@ -1,6 +1,6 @@
 [package]
 name = "xp3"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["storycraft <storycraft@pancake.sh>"]
 readme = "readme.md"
 keywords = ["kirikiri", "archive", "xp3"]
