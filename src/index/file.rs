@@ -4,7 +4,7 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::io::{Cursor, Read, Write};
+use std::{convert::TryFrom, io::{Cursor, Read, Write}};
 
 use byteorder::LittleEndian;
 use encoding::{DecoderTrap, EncoderTrap, Encoding, all::UTF_16LE};
@@ -170,6 +170,21 @@ pub enum IndexInfoFlag {
 
 }
 
+impl TryFrom<u32> for IndexInfoFlag {
+
+    type Error = XP3Error;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+
+            value if value == Self::NotProtected as u32 => Ok(Self::NotProtected),
+            value if value == Self::Protected as u32 => Ok(Self::Protected),
+
+            _ => Err(XP3Error::new(XP3ErrorKind::InvalidFileIndexFlag, None))
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 /// Index info represents file metadatas like name.
 pub struct XP3FileIndexInfo {
@@ -231,17 +246,7 @@ impl XP3FileIndexInfo {
 
     /// Read xp3 file index info from stream.
     pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
-        let flag = {
-            let raw_flag = stream.read_u32::<LittleEndian>()?;
-
-            if raw_flag == IndexInfoFlag::NotProtected as u32 {
-                Ok(IndexInfoFlag::NotProtected)
-            } else if raw_flag == IndexInfoFlag::Protected as u32 {
-                Ok(IndexInfoFlag::Protected)
-            } else {
-                Err(XP3Error::new(XP3ErrorKind::InvalidFileIndex, None))
-            }
-        }?;
+        let flag = IndexInfoFlag::try_from(stream.read_u32::<LittleEndian>()?)?;
 
         let file_size = stream.read_u64::<LittleEndian>()?;
         let saved_file_size = stream.read_u64::<LittleEndian>()?;

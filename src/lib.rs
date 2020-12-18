@@ -16,6 +16,9 @@ pub mod header;
 pub mod index;
 pub mod index_set;
 
+pub use reader::XP3Reader;
+pub use writer::XP3Writer;
+
 use std::{error::Error, io};
 
 use self::{header::XP3Header, index_set::XP3IndexSet};
@@ -25,6 +28,8 @@ pub const XP3_MAGIC: [u8; 10] = [ 0x58_u8, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0
 pub const XP3_CURRENT_VER_IDENTIFIER: u64 = 0x17;
 
 pub const XP3_VERSION_IDENTIFIER: u8 = 128;
+
+pub const XP3_INDEX_CONTINUE: u8 = 0x80;
 
 pub const XP3_INDEX_FILE_IDENTIFIER: u32 = 1701603654; // File
 
@@ -75,6 +80,7 @@ pub enum XP3ErrorKind {
     InvalidHeader,
     InvalidFileIndexHeader,
     InvalidFileIndex,
+    InvalidFileIndexFlag,
 
     FileNotFound
 

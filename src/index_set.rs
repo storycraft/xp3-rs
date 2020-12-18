@@ -4,10 +4,12 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::{collections::{HashMap, hash_map::{Iter, Values}}, io::{Cursor, Read, Write}};
+use std::{collections::{HashMap, hash_map::{Iter, Values}}, convert::TryFrom, io::{Cursor, Read, Write}};
 
 use byteorder::LittleEndian;
 use flate2::{Compression, read::{ZlibDecoder, ZlibEncoder}};
+
+use crate::XP3_INDEX_CONTINUE;
 
 use super::{XP3Error, XP3ErrorKind, XP3_INDEX_FILE_IDENTIFIER, index::{XP3Index, file::XP3FileIndex}};
 
@@ -21,6 +23,19 @@ pub enum XP3IndexCompression {
 
     Compressed = 1
 
+}
+
+impl TryFrom<u8> for XP3IndexCompression {
+
+    type Error = XP3Error;
+
+    fn try_from(val: u8) -> Result<Self, Self::Error> {
+        match val {
+            val if val == Self::UnCompressed as u8 => Ok(Self::UnCompressed),
+            val if val == Self::Compressed as u8 => Ok(Self::Compressed),
+            _ => Err(XP3Error::new(XP3ErrorKind::InvalidFileIndexHeader, None)),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -86,19 +101,13 @@ impl XP3IndexSet {
 
     /// Read xp3 file index set from stream.
     pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
-        let flag = {
-            let raw_flag = stream.read_u8()?;
+        let mut raw_flag: u8 = stream.read_u8()?;
+        // Skip continue part
+        while raw_flag == XP3_INDEX_CONTINUE {
+            raw_flag = stream.read_u8()?;
+        }
 
-            if raw_flag == XP3IndexCompression::UnCompressed as u8 {
-                Ok(XP3IndexCompression::UnCompressed)
-            // Compressed
-            } else if raw_flag == XP3IndexCompression::Compressed as u8 {
-                Ok(XP3IndexCompression::Compressed)
-            // Unknown
-            } else {
-                Err(XP3Error::new(XP3ErrorKind::InvalidFileIndexHeader, None))
-            }
-        }?;
+        let flag = XP3IndexCompression::try_from(raw_flag)?;
 
         let index_data: Vec<u8>;
         let index_size: u64;
