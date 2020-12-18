@@ -69,27 +69,32 @@ pub trait XP3FilterMethod {
 }
 
 /// XP3 archive filter mainy used for encryption
-pub struct XP3ArchiveFilter<'a, T, F: XP3FilterMethod> {
+pub struct XP3ArchiveFilter<T, F: XP3FilterMethod> {
 
-    stream: &'a mut T,
+    stream: T,
     hash: u32,
 
     phantom_method: PhantomData<F>
 
 }
 
-impl<'a, T, F: XP3FilterMethod> XP3ArchiveFilter<'a, T, F> {
+impl<T, F: XP3FilterMethod> XP3ArchiveFilter<T, F> {
 
-    pub fn new(stream: &'a mut T, hash: u32) -> Self {
+    pub fn new(stream: T, hash: u32) -> Self {
         Self {
             stream, hash,
             phantom_method: PhantomData
         }
     }
 
+    /// Unwrap stream
+    pub fn into_inner(self) -> T {
+        self.stream
+    }
+
 }
 
-impl<'a, T: Write, F: XP3FilterMethod> Write for XP3ArchiveFilter<'a, T, F> {
+impl<T: Write, F: XP3FilterMethod> Write for XP3ArchiveFilter<T, F> {
 
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         F::filter(buf, self.hash, &mut self.stream)
@@ -101,7 +106,7 @@ impl<'a, T: Write, F: XP3FilterMethod> Write for XP3ArchiveFilter<'a, T, F> {
 
 }
 
-impl<'a, T: Read, F: XP3FilterMethod> Read for XP3ArchiveFilter<'a, T, F> {
+impl<T: Read, F: XP3FilterMethod> Read for XP3ArchiveFilter<T, F> {
 
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut raw_buf = vec![0_u8; buf.len()];
