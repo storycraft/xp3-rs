@@ -15,14 +15,11 @@ pub mod file;
 #[derive(Debug, Clone)]
 /// General XP3 index
 pub struct XP3Index {
-
     pub identifier: u32,
-    pub data: Vec<u8>
-
+    pub data: Vec<u8>,
 }
 
 impl XP3Index {
-
     /// Read xp3 index from stream.
     /// Returns read size, XP3Index tuple.
     pub fn from_bytes(stream: &mut impl Read) -> Result<(u64, Self), XP3Error> {
@@ -40,9 +37,8 @@ impl XP3Index {
         stream.write_u32::<LittleEndian>(self.identifier)?;
         let len = self.data.len() as u64;
         stream.write_u64::<LittleEndian>(len)?;
-        stream.write_all(&mut self.data)?;
+        stream.write_all(&self.data)?;
 
         Ok(12 + len)
     }
-
 }

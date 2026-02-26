@@ -23,7 +23,9 @@ use std::{error::Error, io};
 
 use self::{header::XP3Header, index_set::XP3IndexSet};
 
-pub const XP3_MAGIC: [u8; 10] = [ 0x58_u8, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67 ];
+pub const XP3_MAGIC: [u8; 10] = [
+    0x58_u8, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67,
+];
 
 pub const XP3_CURRENT_VER_IDENTIFIER: u64 = 0x17;
 
@@ -40,18 +42,13 @@ pub const XP3_INDEX_TIME_IDENTIFIER: u32 = 1701669236; // time
 
 #[derive(Debug)]
 pub struct XP3Error {
-
     kind: XP3ErrorKind,
-    error: Option<Box<dyn Error>>
-
+    error: Option<Box<dyn Error>>,
 }
 
 impl XP3Error {
-
     pub fn new(kind: XP3ErrorKind, error: Option<Box<dyn Error>>) -> Self {
-        Self {
-            kind, error
-        }
+        Self { kind, error }
     }
 
     pub fn kind(&self) -> &XP3ErrorKind {
@@ -61,20 +58,16 @@ impl XP3Error {
     pub fn error(&self) -> &Option<Box<dyn Error>> {
         &self.error
     }
-
 }
 
 impl From<io::Error> for XP3Error {
-
     fn from(err: io::Error) -> Self {
         XP3Error::new(XP3ErrorKind::Io(err), None)
     }
-
 }
 
 #[derive(Debug)]
 pub enum XP3ErrorKind {
-
     Io(io::Error),
     InvalidFile,
     InvalidHeader,
@@ -82,29 +75,19 @@ pub enum XP3ErrorKind {
     InvalidFileIndex,
     InvalidFileIndexFlag,
 
-    FileNotFound
-
+    FileNotFound,
 }
 
 /// Virtual XP3 container containing XP3 file information.
 #[derive(Debug)]
 pub struct VirtualXP3 {
-
     header: XP3Header,
-    index_set: XP3IndexSet
-
+    index_set: XP3IndexSet,
 }
 
 impl VirtualXP3 {
-
-    pub fn new(
-        header: XP3Header,
-        index_set: XP3IndexSet
-    ) -> Self {
-        Self {
-            header,
-            index_set
-        }
+    pub fn new(header: XP3Header, index_set: XP3IndexSet) -> Self {
+        Self { header, index_set }
     }
 
     pub fn header(&self) -> XP3Header {
@@ -122,5 +105,4 @@ impl VirtualXP3 {
     pub fn set_index_set(&mut self, index_set: XP3IndexSet) {
         self.index_set = index_set;
     }
-
 }

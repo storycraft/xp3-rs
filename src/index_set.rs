@@ -4,29 +4,39 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::{collections::{HashMap, hash_map::{Iter, Values}}, convert::TryFrom, io::{Cursor, Read, Write}};
+use std::{
+    collections::{
+        hash_map::{Iter, Values},
+        HashMap,
+    },
+    convert::TryFrom,
+    io::{Cursor, Read, Write},
+};
 
 use byteorder::LittleEndian;
-use flate2::{Compression, read::{ZlibDecoder, ZlibEncoder}};
+use flate2::{
+    read::{ZlibDecoder, ZlibEncoder},
+    Compression,
+};
 
 use crate::XP3_INDEX_CONTINUE;
 
-use super::{XP3Error, XP3ErrorKind, XP3_INDEX_FILE_IDENTIFIER, index::{XP3Index, file::XP3FileIndex}};
+use super::{
+    index::{file::XP3FileIndex, XP3Index},
+    XP3Error, XP3ErrorKind, XP3_INDEX_FILE_IDENTIFIER,
+};
 
-use byteorder::{WriteBytesExt, ReadBytesExt};
+use byteorder::{ReadBytesExt, WriteBytesExt};
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u8)]
 pub enum XP3IndexCompression {
-
     UnCompressed = 0,
 
-    Compressed = 1
-
+    Compressed = 1,
 }
 
 impl TryFrom<u8> for XP3IndexCompression {
-
     type Error = XP3Error;
 
     fn try_from(val: u8) -> Result<Self, Self::Error> {
@@ -40,26 +50,23 @@ impl TryFrom<u8> for XP3IndexCompression {
 
 #[derive(Debug)]
 pub struct XP3IndexSet {
-
     compression: XP3IndexCompression,
 
     extra: Vec<XP3Index>,
 
-    file_map: HashMap<String, XP3FileIndex>
-
+    file_map: HashMap<String, XP3FileIndex>,
 }
 
 impl XP3IndexSet {
-
     pub fn new(
         compression: XP3IndexCompression,
         extra: Vec<XP3Index>,
-        file_map: HashMap<String, XP3FileIndex>
+        file_map: HashMap<String, XP3FileIndex>,
     ) -> Self {
         Self {
             compression,
             extra,
-            file_map
+            file_map,
         }
     }
 
@@ -71,7 +78,7 @@ impl XP3IndexSet {
         self.compression = compression;
     }
 
-    pub fn indices(&self) -> Values<String, XP3FileIndex> {
+    pub fn indices(&self) -> Values<'_, String, XP3FileIndex> {
         self.file_map.values()
     }
 
@@ -91,7 +98,7 @@ impl XP3IndexSet {
         &mut self.file_map
     }
 
-    pub fn entries(&self) -> Iter<String, XP3FileIndex> {
+    pub fn entries(&self) -> Iter<'_, String, XP3FileIndex> {
         self.file_map.iter()
     }
 
@@ -121,20 +128,22 @@ impl XP3IndexSet {
 
                 index_data = data;
                 raw_index_read = index_size;
-            },
+            }
 
             XP3IndexCompression::Compressed => {
                 let compressed_size = stream.read_u64::<LittleEndian>()?;
                 index_size = stream.read_u64::<LittleEndian>()?;
 
                 let mut compressed_buffer = Vec::<u8>::with_capacity(compressed_size as usize);
-                stream.take(compressed_size).read_to_end(&mut compressed_buffer)?;
+                stream
+                    .take(compressed_size)
+                    .read_to_end(&mut compressed_buffer)?;
 
                 let decoder = ZlibDecoder::new(&compressed_buffer[..]);
-    
+
                 let mut data = Vec::new();
                 decoder.take(index_size).read_to_end(&mut data)?;
-    
+
                 index_data = data;
                 raw_index_read = compressed_size;
             }
@@ -149,11 +158,13 @@ impl XP3IndexSet {
         let mut index_read: u64 = 0;
         while index_read < index_size {
             let (read, index) = XP3Index::from_bytes(&mut index_buffer)?;
-            
-            match index.identifier {
 
+            match index.identifier {
                 XP3_INDEX_FILE_IDENTIFIER => {
-                    let (_, file_index) = XP3FileIndex::from_bytes(index.data.len() as u64, &mut Cursor::new(&index.data))?;
+                    let (_, file_index) = XP3FileIndex::from_bytes(
+                        index.data.len() as u64,
+                        &mut Cursor::new(&index.data),
+                    )?;
                     file_map.insert(file_index.info().name().clone(), file_index);
                 }
 
@@ -162,11 +173,13 @@ impl XP3IndexSet {
                 }
             }
 
-            
             index_read += read;
         }
 
-        Ok((raw_index_read + index_size, Self::new(flag, extra, file_map)))
+        Ok((
+            raw_index_read + index_size,
+            Self::new(flag, extra, file_map),
+        ))
     }
 
     /// Write xp3 file index set to stream.
@@ -182,7 +195,11 @@ impl XP3IndexSet {
         for index in self.file_map.values() {
             let mut buffer = Vec::<u8>::new();
             index.write_bytes(&mut buffer)?;
-            XP3Index { identifier: XP3_INDEX_FILE_IDENTIFIER, data: buffer }.write_bytes(&mut index_buffer)?;
+            XP3Index {
+                identifier: XP3_INDEX_FILE_IDENTIFIER,
+                data: buffer,
+            }
+            .write_bytes(&mut index_buffer)?;
         }
 
         match self.compression {
@@ -190,11 +207,11 @@ impl XP3IndexSet {
                 let size = index_buffer.len() as u64;
 
                 stream.write_u64::<LittleEndian>(size)?;
-                
+
                 stream.write_all(&index_buffer)?;
 
                 Ok(9 + size)
-            },
+            }
 
             XP3IndexCompression::Compressed => {
                 let mut compressed_data = Vec::<u8>::new();
@@ -207,11 +224,10 @@ impl XP3IndexSet {
                 stream.write_u64::<LittleEndian>(compressed_data.len() as u64)?;
                 stream.write_u64::<LittleEndian>(encoder.get_ref().get_ref().len() as u64)?;
 
-                stream.write_all(&mut compressed_data)?;
+                stream.write_all(&compressed_data)?;
 
-                Ok(17 + compressed_data.len() as u64)   
+                Ok(17 + compressed_data.len() as u64)
             }
         }
     }
-
 }

@@ -4,16 +4,29 @@
  * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
  */
 
-use std::{collections::HashMap, io::{self, Read, Seek, SeekFrom, Write}};
+use std::{
+    collections::HashMap,
+    io::{self, Read, Seek, SeekFrom, Write},
+};
 
 use adler32::RollingAdler32;
-use byteorder::{WriteBytesExt, LittleEndian};
-use flate2::{Compression, read::ZlibEncoder};
+use byteorder::{LittleEndian, WriteBytesExt};
+use flate2::{read::ZlibEncoder, Compression};
 
-use super::{VirtualXP3, XP3Error, XP3_MAGIC, header::{XP3Header, XP3HeaderVersion}, index::{XP3Index, file::{IndexInfoFlag, IndexSegmentFlag, XP3FileIndex, XP3FileIndexAdler, XP3FileIndexInfo, XP3FileIndexSegment, XP3FileIndexTime}}, index_set::{XP3IndexCompression, XP3IndexSet}};
+use super::{
+    header::{XP3Header, XP3HeaderVersion},
+    index::{
+        file::{
+            IndexInfoFlag, IndexSegmentFlag, XP3FileIndex, XP3FileIndexAdler, XP3FileIndexInfo,
+            XP3FileIndexSegment, XP3FileIndexTime,
+        },
+        XP3Index,
+    },
+    index_set::{XP3IndexCompression, XP3IndexSet},
+    VirtualXP3, XP3Error, XP3_MAGIC,
+};
 
 pub struct XP3Writer<T: Write + Seek> {
-
     stream: T,
 
     // Position of start
@@ -23,20 +36,18 @@ pub struct XP3Writer<T: Write + Seek> {
     index_pos: u64,
 
     header: XP3Header,
-    index_set: XP3IndexSet
-
+    index_set: XP3IndexSet,
 }
 
 impl<T: Write + Seek> XP3Writer<T> {
-
     /// Start new XP3 file writing
     pub fn start(
         mut stream: T,
         version: XP3HeaderVersion,
-        index_compression: XP3IndexCompression
+        index_compression: XP3IndexCompression,
     ) -> Result<Self, XP3Error> {
         let header = XP3Header::new(version);
-        let start_pos = stream.seek(SeekFrom::Current(0))?;
+        let start_pos = stream.stream_position()?;
 
         // Write magic
         stream.write_all(&XP3_MAGIC)?;
@@ -45,7 +56,7 @@ impl<T: Write + Seek> XP3Writer<T> {
         // Write header
         header.write_bytes(&mut stream)?;
         // Save position
-        let index_pos = stream.seek(SeekFrom::Current(0))?;
+        let index_pos = stream.stream_position()?;
         // index offset will be overridden after data stream written.
         stream.write_u64::<LittleEndian>(0)?;
 
@@ -54,7 +65,7 @@ impl<T: Write + Seek> XP3Writer<T> {
             start_pos,
             index_pos,
             header,
-            index_set: XP3IndexSet::new(index_compression, Vec::new(), HashMap::new())
+            index_set: XP3IndexSet::new(index_compression, Vec::new(), HashMap::new()),
         })
     }
 
@@ -63,7 +74,7 @@ impl<T: Write + Seek> XP3Writer<T> {
     }
 
     pub fn current_pos(&mut self) -> u64 {
-        self.stream.seek(SeekFrom::Current(0)).unwrap()
+        self.stream.stream_position().unwrap()
     }
 
     /// Enter file entry start
@@ -71,18 +82,19 @@ impl<T: Write + Seek> XP3Writer<T> {
         &mut self,
         protection: IndexInfoFlag,
         name: String,
-        timestamp: Option<u64>
+        timestamp: Option<u64>,
     ) -> EntryWriter<'_, T> {
         EntryWriter::new(self, protection, name, timestamp)
     }
 
     /// Append indexes and finish file
     pub fn finish(mut self) -> Result<(VirtualXP3, T), XP3Error> {
-        let current = self.stream.seek(SeekFrom::Current(0))?;
+        let current = self.stream.stream_position()?;
 
         self.stream.seek(SeekFrom::Start(self.index_pos))?;
         // Write index offset
-        self.stream.write_u64::<LittleEndian>(current - self.start_pos)?;
+        self.stream
+            .write_u64::<LittleEndian>(current - self.start_pos)?;
 
         self.stream.seek(SeekFrom::Start(current))?;
 
@@ -91,11 +103,9 @@ impl<T: Write + Seek> XP3Writer<T> {
 
         Ok((VirtualXP3::new(self.header, self.index_set), self.stream))
     }
-
 }
 
 pub struct EntryWriter<'a, T: Write + Seek> {
-
     writer: &'a mut XP3Writer<T>,
 
     protection: IndexInfoFlag,
@@ -108,17 +118,15 @@ pub struct EntryWriter<'a, T: Write + Seek> {
 
     default_flag: IndexSegmentFlag,
 
-    written_segments: Vec<XP3FileIndexSegment>
-
+    written_segments: Vec<XP3FileIndexSegment>,
 }
 
 impl<'a, T: Write + Seek> EntryWriter<'a, T> {
-
     pub fn new(
         writer: &'a mut XP3Writer<T>,
         protection: IndexInfoFlag,
         name: String,
-        timestamp: Option<u64>
+        timestamp: Option<u64>,
     ) -> Self {
         Self {
             writer,
@@ -129,7 +137,7 @@ impl<'a, T: Write + Seek> EntryWriter<'a, T> {
             original_size: 0,
             adler: RollingAdler32::new(),
             default_flag: IndexSegmentFlag::UnCompressed,
-            written_segments: Vec::new()
+            written_segments: Vec::new(),
         }
     }
 
@@ -144,7 +152,7 @@ impl<'a, T: Write + Seek> EntryWriter<'a, T> {
     /// Write one segment from stream.
     /// Returns write size.
     pub fn write_segment(&mut self, flag: IndexSegmentFlag, data: &[u8]) -> Result<u64, io::Error> {
-        self.adler.update_buffer(&data);
+        self.adler.update_buffer(data);
 
         let original_size: u64 = data.len() as u64;
         let saved_size: u64;
@@ -154,15 +162,15 @@ impl<'a, T: Write + Seek> EntryWriter<'a, T> {
 
                 saved_size = data.len() as u64;
                 self.saved_size += saved_size;
-            },
+            }
 
             IndexSegmentFlag::Compressed => {
                 let mut compressed = Vec::<u8>::new();
-                let mut encoder = ZlibEncoder::new(&data[..], Compression::fast());
+                let mut encoder = ZlibEncoder::new(data, Compression::fast());
 
                 encoder.read_to_end(&mut compressed)?;
 
-                self.writer.stream.write_all(&mut compressed)?;
+                self.writer.stream.write_all(&compressed)?;
                 saved_size = compressed.len() as u64;
                 self.saved_size += saved_size;
             }
@@ -173,7 +181,7 @@ impl<'a, T: Write + Seek> EntryWriter<'a, T> {
             flag,
             self.writer.current_pos() - saved_size - self.writer.start_pos,
             original_size,
-            saved_size
+            saved_size,
         ));
 
         Ok(saved_size)
@@ -197,21 +205,21 @@ impl<'a, T: Write + Seek> EntryWriter<'a, T> {
                 self.protection,
                 self.original_size,
                 self.saved_size,
-                self.name.clone()
+                self.name.clone(),
             ),
             self.written_segments.clone(),
             XP3FileIndexAdler::new(self.adler.hash()),
-            time
+            time,
         );
 
-        self.writer.index_set.file_map_mut().insert(index.info().name().clone(), index);
+        self.writer
+            .index_set
+            .file_map_mut()
+            .insert(index.info().name().clone(), index);
     }
-
 }
 
-
 impl<'a, T: Write + Seek> Write for EntryWriter<'a, T> {
-
     /// Write with default flag
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         Ok(self.write_segment(self.default_flag, buf)? as usize)
@@ -220,12 +228,9 @@ impl<'a, T: Write + Seek> Write for EntryWriter<'a, T> {
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
-
 }
 
 /// Preventing creating more entry before previous entry finish.
 impl<'a, T: Write + Seek> Drop for EntryWriter<'a, T> {
-
-    fn drop(&mut self) { }
-
+    fn drop(&mut self) {}
 }

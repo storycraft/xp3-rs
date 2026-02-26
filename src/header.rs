@@ -9,21 +9,16 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use byteorder::LittleEndian;
 
 use super::{XP3Error, XP3ErrorKind, XP3_CURRENT_VER_IDENTIFIER, XP3_VERSION_IDENTIFIER};
-use byteorder::{WriteBytesExt, ReadBytesExt};
- 
+use byteorder::{ReadBytesExt, WriteBytesExt};
+
 #[derive(Debug, Copy, Clone)]
 pub struct XP3Header {
-
-    version: XP3HeaderVersion
-
+    version: XP3HeaderVersion,
 }
 
 impl XP3Header {
-
     pub fn new(version: XP3HeaderVersion) -> Self {
-        Self {
-            version
-        }
+        Self { version }
     }
 
     pub fn version(&self) -> XP3HeaderVersion {
@@ -37,7 +32,7 @@ impl XP3Header {
     /// Read xp3 header from current position.
     /// Returns read size, XP3header tuple.
     pub fn from_bytes<T: Read + Seek>(stream: &mut T) -> Result<(u64, Self), XP3Error> {
-        let current = stream.seek(SeekFrom::Current(0))?;
+        let current = stream.stream_position()?;
 
         let identifier = stream.read_u64::<LittleEndian>()?;
 
@@ -49,20 +44,16 @@ impl XP3Header {
             if stream.read_u8()? != XP3_VERSION_IDENTIFIER {
                 return Err(XP3Error::new(XP3ErrorKind::InvalidHeader, None));
             }
-            
-            header = XP3Header::new(
-                XP3HeaderVersion::Current {
-                    minor_version,
-                    index_size_offset: stream.read_u64::<LittleEndian>()?
-                }
-            );
+
+            header = XP3Header::new(XP3HeaderVersion::Current {
+                minor_version,
+                index_size_offset: stream.read_u64::<LittleEndian>()?,
+            });
 
             read = 21;
         } else {
             stream.seek(SeekFrom::Start(current))?;
-            header = XP3Header::new(
-                XP3HeaderVersion::Old
-            );
+            header = XP3Header::new(XP3HeaderVersion::Old);
             read = 0;
         }
 
@@ -72,37 +63,32 @@ impl XP3Header {
     /// Write xp3 header to stream.
     /// Returns written size.
     pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
-        let ver_written: u64;
-        match self.version {
+        Ok(match self.version {
             XP3HeaderVersion::Old => {
-                ver_written = 0;
-            },
+                0
+            }
 
-            XP3HeaderVersion::Current { minor_version, index_size_offset } => {
+            XP3HeaderVersion::Current {
+                minor_version,
+                index_size_offset,
+            } => {
                 stream.write_u64::<LittleEndian>(XP3_CURRENT_VER_IDENTIFIER)?;
                 stream.write_u32::<LittleEndian>(minor_version)?;
                 stream.write_u8(XP3_VERSION_IDENTIFIER)?;
                 stream.write_u64::<LittleEndian>(index_size_offset)?;
-                ver_written = 21;
+                21
             }
-        }
-
-        Ok(ver_written)
+        })
     }
-
 }
 
 #[derive(Debug, Copy, Clone)]
 /// Header starting with XP3_HEADER_IDENTIFIER is Current, otherwise Old.
 pub enum XP3HeaderVersion {
-
     Old,
 
     Current {
-
         minor_version: u32,
-        index_size_offset: u64
-
-    }
-
+        index_size_offset: u64,
+    },
 }

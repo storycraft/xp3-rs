@@ -6,15 +6,20 @@
 
 use std::io::{self, Read, Seek, SeekFrom, Write};
 
-use byteorder::{ReadBytesExt, LittleEndian};
+use byteorder::{LittleEndian, ReadBytesExt};
 use flate2::read::ZlibDecoder;
 
-use super::{VirtualXP3, XP3Error, XP3ErrorKind, XP3_MAGIC, archive::XP3Archive, header::{XP3Header, XP3HeaderVersion}, index::file::{IndexSegmentFlag, XP3FileIndexSegment}, index_set::XP3IndexSet};
+use super::{
+    archive::XP3Archive,
+    header::{XP3Header, XP3HeaderVersion},
+    index::file::{IndexSegmentFlag, XP3FileIndexSegment},
+    index_set::XP3IndexSet,
+    VirtualXP3, XP3Error, XP3ErrorKind, XP3_MAGIC,
+};
 
 pub struct XP3Reader;
 
 impl XP3Reader {
-
     /// Open XP3 archive.
     pub fn open_archive<T: Read + Seek>(mut stream: T) -> Result<XP3Archive<T>, XP3Error> {
         Ok(XP3Archive::new(Self::read_container(&mut stream)?, stream))
@@ -22,7 +27,7 @@ impl XP3Reader {
 
     /// Read xp3 container using stream.
     pub fn read_container<T: Read + Seek>(stream: &mut T) -> Result<VirtualXP3, XP3Error> {
-        let current = stream.seek(SeekFrom::Current(0))?;
+        let current = stream.stream_position()?;
 
         Self::check_archive(stream)?;
 
@@ -32,11 +37,12 @@ impl XP3Reader {
         let (_, header) = XP3Header::from_bytes(stream)?;
 
         match header.version() {
-            XP3HeaderVersion::Old => {
-                
-            }
+            XP3HeaderVersion::Old => {}
 
-            XP3HeaderVersion::Current { minor_version: _, index_size_offset } => {
+            XP3HeaderVersion::Current {
+                minor_version: _,
+                index_size_offset,
+            } => {
                 stream.seek(SeekFrom::Current(index_size_offset as i64))?;
             }
         }
@@ -55,7 +61,11 @@ impl XP3Reader {
     }
 
     /// Read data from provided segment.
-    pub fn read_segment<O: Read + Seek, T: Write>(segment: &XP3FileIndexSegment, from: &mut O, stream: &mut T) -> Result<(), XP3Error> {
+    pub fn read_segment<O: Read + Seek, T: Write>(
+        segment: &XP3FileIndexSegment,
+        from: &mut O,
+        stream: &mut T,
+    ) -> Result<(), XP3Error> {
         let read_size = segment.saved_size();
         let read_offset = segment.data_offset();
 
@@ -64,7 +74,7 @@ impl XP3Reader {
         match segment.flag() {
             IndexSegmentFlag::UnCompressed => {
                 io::copy(&mut from.take(read_size), stream)?;
-            },
+            }
 
             IndexSegmentFlag::Compressed => {
                 let decoder = ZlibDecoder::new(from.take(read_size));
@@ -91,5 +101,4 @@ impl XP3Reader {
 
         Ok(())
     }
-
 }
