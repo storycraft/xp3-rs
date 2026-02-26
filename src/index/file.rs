@@ -1,20 +1,14 @@
-/*
- * Created on Tue Dec 15 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 use std::{
     convert::TryFrom,
     io::{Cursor, Read, Write},
 };
 
 use byteorder::LittleEndian;
-use encoding::{all::UTF_16LE, DecoderTrap, EncoderTrap, Encoding};
+use encoding::{DecoderTrap, EncoderTrap, Encoding, all::UTF_16LE};
 
 use crate::{
-    XP3Error, XP3ErrorKind, XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_INFO_IDENTIFIER,
-    XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER,
+    XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_INFO_IDENTIFIER, XP3_INDEX_SEGM_IDENTIFIER,
+    XP3_INDEX_TIME_IDENTIFIER, XP3Error, XP3ErrorKind,
 };
 use byteorder::{ReadBytesExt, WriteBytesExt};
 

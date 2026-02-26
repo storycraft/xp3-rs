@@ -1,9 +1,3 @@
-/*
- * Created on Sun Dec 13 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 use std::{
     cell::RefCell,
     collections::hash_map::Iter,
@@ -11,7 +5,7 @@ use std::{
     marker::PhantomData,
 };
 
-use super::{index::file::XP3FileIndex, reader::XP3Reader, VirtualXP3, XP3Error, XP3ErrorKind};
+use super::{VirtualXP3, XP3Error, XP3ErrorKind, index::file::XP3FileIndex, reader::XP3Reader};
 
 /// An XP3 archive with XP3 container.
 /// Read only occur when user request.

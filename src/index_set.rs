@@ -1,13 +1,7 @@
-/*
- * Created on Tue Dec 15 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 use std::{
     collections::{
-        hash_map::{Iter, Values},
         HashMap,
+        hash_map::{Iter, Values},
     },
     convert::TryFrom,
     io::{Cursor, Read, Write},
@@ -15,15 +9,15 @@ use std::{
 
 use byteorder::LittleEndian;
 use flate2::{
-    read::{ZlibDecoder, ZlibEncoder},
     Compression,
+    read::{ZlibDecoder, ZlibEncoder},
 };
 
 use crate::XP3_INDEX_CONTINUE;
 
 use super::{
-    index::{file::XP3FileIndex, XP3Index},
-    XP3Error, XP3ErrorKind, XP3_INDEX_FILE_IDENTIFIER,
+    XP3_INDEX_FILE_IDENTIFIER, XP3Error, XP3ErrorKind,
+    index::{XP3Index, file::XP3FileIndex},
 };
 
 use byteorder::{ReadBytesExt, WriteBytesExt};

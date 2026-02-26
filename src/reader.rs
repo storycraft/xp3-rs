@@ -1,20 +1,14 @@
-/*
- * Created on Mon Dec 14 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 use std::io::{self, Read, Seek, SeekFrom, Write};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use flate2::read::ZlibDecoder;
 
 use super::{
+    VirtualXP3, XP3_MAGIC, XP3Error, XP3ErrorKind,
     archive::XP3Archive,
     header::{XP3Header, XP3HeaderVersion},
     index::file::{IndexSegmentFlag, XP3FileIndexSegment},
     index_set::XP3IndexSet,
-    VirtualXP3, XP3Error, XP3ErrorKind, XP3_MAGIC,
 };
 
 pub struct XP3Reader;

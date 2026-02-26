@@ -1,9 +1,3 @@
-/*
- * Created on Mon Dec 14 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 use std::{
     collections::HashMap,
     io::{self, Read, Seek, SeekFrom, Write},
@@ -11,19 +5,19 @@ use std::{
 
 use adler32::RollingAdler32;
 use byteorder::{LittleEndian, WriteBytesExt};
-use flate2::{read::ZlibEncoder, Compression};
+use flate2::{Compression, read::ZlibEncoder};
 
 use super::{
+    VirtualXP3, XP3_MAGIC, XP3Error,
     header::{XP3Header, XP3HeaderVersion},
     index::{
+        XP3Index,
         file::{
             IndexInfoFlag, IndexSegmentFlag, XP3FileIndex, XP3FileIndexAdler, XP3FileIndexInfo,
             XP3FileIndexSegment, XP3FileIndexTime,
         },
-        XP3Index,
     },
     index_set::{XP3IndexCompression, XP3IndexSet},
-    VirtualXP3, XP3Error, XP3_MAGIC,
 };
 
 pub struct XP3Writer<T: Write + Seek> {

@@ -1,14 +1,8 @@
-/*
- * Created on Tue Dec 15 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 use std::io::{Read, Seek, SeekFrom, Write};
 
 use byteorder::LittleEndian;
 
-use super::{XP3Error, XP3ErrorKind, XP3_CURRENT_VER_IDENTIFIER, XP3_VERSION_IDENTIFIER};
+use super::{XP3_CURRENT_VER_IDENTIFIER, XP3_VERSION_IDENTIFIER, XP3Error, XP3ErrorKind};
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 #[derive(Debug, Copy, Clone)]
@@ -64,9 +58,7 @@ impl XP3Header {
     /// Returns written size.
     pub fn write_bytes(&self, stream: &mut impl Write) -> Result<u64, XP3Error> {
         Ok(match self.version {
-            XP3HeaderVersion::Old => {
-                0
-            }
+            XP3HeaderVersion::Old => 0,
 
             XP3HeaderVersion::Current {
                 minor_version,

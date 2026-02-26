@@ -1,9 +1,3 @@
-/*
- * Created on Tue Dec 15 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 //! A XP3(krkr) archive library for rust.
 //! ## Examples
 //! See `examples` directory for various code examples.

@@ -1,9 +1,3 @@
-/*
- * Created on Wed Dec 16 2020
- *
- * Copyright (c) storycraft. Licensed under the Apache Licence 2.0.
- */
-
 use std::{
     fs::File,
     io::{BufWriter, Write},
