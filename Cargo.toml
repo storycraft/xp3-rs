@@ -5,11 +5,9 @@ authors = ["storycraft <storycraft@pancake.sh>"]
 readme = "readme.md"
 keywords = ["kirikiri", "archive", "xp3"]
 license = "Apache-2.0"
-edition = "2018"
+edition = "2024"
 repository = "https://github.com/storycraft/xp3-rs"
 description = "A XP3 archive library for rust"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 flate2 = "1.0"
