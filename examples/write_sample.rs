@@ -1,6 +1,9 @@
 use core::error::Error;
 
-use tokio::{fs::File, io::{AsyncWriteExt, BufWriter}};
+use tokio::{
+    fs::File,
+    io::{AsyncWriteExt, BufWriter},
+};
 use xp3::{header::XP3Version, write::XP3Writer};
 
 #[tokio::main]

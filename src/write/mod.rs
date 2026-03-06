@@ -11,7 +11,10 @@ use async_compression::{Level, tokio::write::ZlibEncoder};
 use tokio::io::{AsyncSeek, AsyncSeekExt, AsyncWrite, AsyncWriteExt};
 
 use crate::{
-    XP3_CURRENT_VER_IDENTIFIER, XP3_MAGIC, XP3_VERSION_IDENTIFIER, entry::{DataSegment, XP3Entries, XP3FileEntry}, header::XP3Version, write::stream::XP3FileStream
+    XP3_CURRENT_VER_IDENTIFIER, XP3_MAGIC, XP3_VERSION_IDENTIFIER,
+    entry::{DataSegment, XP3Entries, XP3FileEntry},
+    header::XP3Version,
+    write::stream::XP3FileStream,
 };
 
 #[derive(Debug)]
