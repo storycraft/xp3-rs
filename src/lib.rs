@@ -2,9 +2,10 @@
 //! ## Examples
 //! See `examples` directory for various code examples.
 
+mod entry;
 pub mod header;
-pub mod prelude;
 pub mod read;
+pub mod write;
 
 pub const XP3_MAGIC: [u8; 10] = [0x58, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67];
 

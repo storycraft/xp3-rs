@@ -7,27 +7,10 @@ use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
 use crate::{
     XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_CONTINUE, XP3_INDEX_FILE_IDENTIFIER,
     XP3_INDEX_INFO_IDENTIFIER, XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER,
-    XP3_PROTECTED_FLAG, read::error::XP3OpenError,
+    XP3_PROTECTED_FLAG,
+    entry::{DataSegment, XP3Entries, XP3FileEntry},
+    read::error::XP3OpenError,
 };
-
-/// FileIndex for xp3 archive.
-/// Contains information about file and data offsets.
-#[derive(Debug, Clone, Default)]
-pub struct XP3FileEntry {
-    pub protected: bool,
-    pub name: String,
-    pub size: u64,
-    pub archive_size: u64,
-    pub checksum: u32,
-    pub timestamp: Option<u64>,
-}
-
-#[derive(Debug, Default)]
-pub(super) struct XP3Entries {
-    pub entries: Vec<XP3FileEntry>,
-    pub file_starts: Vec<usize>,
-    pub segments: Vec<DataSegment>,
-}
 
 impl XP3Entries {
     pub async fn open(stream: &mut (impl AsyncRead + Unpin)) -> Result<Self, XP3OpenError> {
@@ -168,14 +151,6 @@ impl XP3Entries {
 
         Ok(())
     }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(super) struct DataSegment {
-    pub compressed: bool,
-    pub start: u64,
-    pub archive_size: u64,
-    pub next: Option<usize>,
 }
 
 // Read index key and size

@@ -1,4 +1,3 @@
-pub mod entry;
 pub mod error;
 mod stream;
 
@@ -13,12 +12,9 @@ use tokio::io::{self, AsyncBufRead, AsyncRead, AsyncReadExt, AsyncSeek, AsyncSee
 
 use crate::{
     XP3_CURRENT_VER_IDENTIFIER, XP3_MAGIC, XP3_VERSION_IDENTIFIER,
+    entry::{DataSegment, XP3Entries, XP3FileEntry},
     header::XP3Version,
-    read::{
-        entry::{DataSegment, XP3Entries, XP3FileEntry},
-        error::XP3OpenError,
-        stream::XP3Stream,
-    },
+    read::{error::XP3OpenError, stream::XP3Stream},
 };
 
 #[derive(Debug)]
@@ -33,6 +29,7 @@ impl<T> XP3Archive<T>
 where
     T: AsyncBufRead + AsyncSeek + Unpin,
 {
+    /// Open and index XP3 archive
     pub async fn open(mut stream: T) -> Result<Self, XP3OpenError> {
         let start = stream.stream_position().await?;
 
@@ -72,13 +69,20 @@ where
     }
 
     #[inline]
+    /// List entries
     pub fn entries(&self) -> &[XP3FileEntry] {
         &self.entries.entries
     }
 
+    /// Open an [`XP3File`] by index
     pub async fn by_index<'a>(&'a mut self, index: usize) -> Option<io::Result<XP3File<'a, T>>> {
         let start = self.entries.segments[*self.entries.file_starts.get(index)?];
         Some(XP3File::open(self.start, &self.entries.segments, start, &mut self.stream).await)
+    }
+
+    #[inline]
+    pub fn into_inner(self) -> T {
+        self.stream
     }
 }
 
