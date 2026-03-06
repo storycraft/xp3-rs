@@ -5,7 +5,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
 
 use crate::{
-    XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_CONTINUE, XP3_INDEX_FILE_IDENTIFIER,
+    XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_FILE_IDENTIFIER,
     XP3_INDEX_INFO_IDENTIFIER, XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER,
     XP3_PROTECTED_FLAG,
     entry::{DataSegment, XP3Entries, XP3FileEntry},
@@ -14,14 +14,7 @@ use crate::{
 
 impl XP3Entries {
     pub async fn open(stream: &mut (impl AsyncRead + Unpin)) -> Result<Self, XP3OpenError> {
-        let compressed = loop {
-            let flag = stream.read_u8().await?;
-            if flag == XP3_INDEX_CONTINUE {
-                continue;
-            }
-
-            break flag != 0;
-        };
+        let compressed = stream.read_u8().await? != 0;
         let size = stream.read_u64_le().await?;
 
         let entries = Self::default();
