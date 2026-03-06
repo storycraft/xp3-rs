@@ -5,9 +5,8 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
 
 use crate::{
-    XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_FILE_IDENTIFIER,
-    XP3_INDEX_INFO_IDENTIFIER, XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER,
-    XP3_PROTECTED_FLAG,
+    XP3_INDEX_ADLR_IDENTIFIER, XP3_INDEX_FILE_IDENTIFIER, XP3_INDEX_INFO_IDENTIFIER,
+    XP3_INDEX_SEGM_IDENTIFIER, XP3_INDEX_TIME_IDENTIFIER, XP3_PROTECTED_FLAG,
     entry::{DataSegment, XP3Entries, XP3FileEntry},
     read::error::XP3OpenError,
 };
@@ -101,11 +100,12 @@ impl XP3Entries {
                         let compressed =
                             ReadBytesExt::read_u32::<LittleEndian>(&mut sub_data)? != 0;
                         let start = ReadBytesExt::read_u64::<LittleEndian>(&mut sub_data)?;
-                        let _size = ReadBytesExt::read_u64::<LittleEndian>(&mut sub_data)?;
+                        let size = ReadBytesExt::read_u64::<LittleEndian>(&mut sub_data)?;
                         let archive_size = ReadBytesExt::read_u64::<LittleEndian>(&mut sub_data)?;
                         self.segments.push(DataSegment {
                             compressed,
                             start,
+                            size,
                             archive_size,
                             next: None,
                         });

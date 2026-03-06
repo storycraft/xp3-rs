@@ -34,6 +34,7 @@ impl XP3Entries {
 pub(super) struct DataSegment {
     pub compressed: bool,
     pub start: u64,
+    pub size: u64,
     pub archive_size: u64,
     pub next: Option<usize>,
 }

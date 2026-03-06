@@ -1,32 +1,16 @@
-use std::{
-    fs::File,
-    io::{BufWriter, Write},
-};
+use core::error::Error;
 
-use xp3::{
-    header::XP3HeaderVersion, index::file::IndexInfoFlag, index_set::XP3IndexCompression,
-    writer::XP3Writer,
-};
+use tokio::{fs::File, io::{AsyncWriteExt, BufWriter}};
+use xp3::{header::XP3Version, write::XP3Writer};
 
-pub fn main() {
-    let sample_xp3 = BufWriter::new(File::create("sample.xp3").unwrap());
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let sample_xp3 = BufWriter::new(File::create("sample.xp3").await?);
+    let mut writer = XP3Writer::new(XP3Version::Current { minor: 1 }, sample_xp3).await?;
 
-    let mut writer = XP3Writer::start(
-        sample_xp3,
-        XP3HeaderVersion::Current {
-            minor_version: 1,
-            index_offset: 0,
-        },
-        XP3IndexCompression::Compressed,
-    )
-    .unwrap();
-
-    let mut entry = writer.enter_file(IndexInfoFlag::Protected, "sample.txt".into(), Some(0));
-
-    entry.write_all("Hello world!".as_bytes()).unwrap();
-    entry.finish();
-
-    let (build, _) = writer.finish().unwrap();
-
-    println!("Written: {:?}", build);
+    let mut file = writer.file("sample.txt".into(), true, None).await?;
+    file.write_all("Hello world!".as_bytes()).await?;
+    file.finish().await?;
+    writer.finish(None).await?;
+    Ok(())
 }
