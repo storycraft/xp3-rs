@@ -58,7 +58,10 @@ impl<T: AsyncWrite> AsyncWrite for XP3FileStream<T> {
         }
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(Ok(()))
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        match self.project() {
+            XP3StreamProj::Compressed(stream) => stream.poll_shutdown(cx),
+            XP3StreamProj::Raw { stream, .. } => stream.poll_shutdown(cx),
+        }
     }
 }

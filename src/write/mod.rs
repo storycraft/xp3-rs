@@ -140,7 +140,7 @@ where
     /// Finish and add file to archive.
     /// Returns file index
     pub async fn finish(mut self) -> io::Result<usize> {
-        self.stream.flush().await?;
+        self.stream.shutdown().await?;
         let size = self.stream.written_original();
         let archive_size = self.stream.written();
 
