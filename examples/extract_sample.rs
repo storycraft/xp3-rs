@@ -1,27 +1,31 @@
-use std::{
+use core::error::Error;
+use std::path::Path;
+
+use tokio::{
     fs::{self, File},
-    io::{BufReader, BufWriter},
-    path::Path,
+    io::{BufReader, BufWriter, copy},
 };
+use xp3::read::XP3Archive;
 
-use xp3::reader::XP3Reader;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let stream = BufReader::new(File::open("sample.xp3").await?);
+    let mut xp3 = XP3Archive::open(stream).await?;
 
-pub fn main() {
-    let stream = BufReader::new(File::open("sample.xp3").unwrap());
+    let dir = Path::new("xp3_test");
+    for i in 0..xp3.entries().len() {
+        let entry = &xp3.entries()[i];
+        println!("Extracting: {}", entry.name);
 
-    let xp3 = XP3Reader::open_archive(stream).unwrap();
+        let path = dir.join(&entry.name);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).await?;
+        }
 
-    for (name, _) in xp3.entries() {
-        println!("Extracting: {}", name);
-
-        let path_str = format!("xp3_test/{}", name);
-        let path = Path::new(&path_str);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-
-        xp3.unpack(
-            &name.into(),
-            &mut BufWriter::new(File::create(path).unwrap()),
-        )
-        .unwrap();
+        let mut out = BufWriter::new(File::create(path).await?);
+        let mut file = xp3.by_index(i).await.unwrap()?;
+        copy(&mut file, &mut out).await?;
     }
+
+    Ok(())
 }

@@ -1,6 +1,7 @@
+use core::error::Error;
 use std::io::Cursor;
 
-use xp3::reader::XP3Reader;
+use xp3::read::XP3Archive;
 
 const TEST_FILE: [u8; 159] = [
     0x58, 0x50, 0x33, 0x0D, 0x0A, 0x20, 0x0A, 0x1A, 0x8B, 0x67, 0x01, 0x17, 0x00, 0x00, 0x00, 0x00,
@@ -15,12 +16,13 @@ const TEST_FILE: [u8; 159] = [
     0x6B, 0x30, 0xAB, 0x6F, 0xF8, 0xD3, 0x65, 0x95, 0x97, 0xF0, 0x05, 0xE1, 0xDC, 0x0E, 0x83,
 ];
 
-pub fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     let stream = Cursor::new(&TEST_FILE[..]);
+    let xp3 = XP3Archive::open(stream).await?;
 
-    let xp3 = XP3Reader::open_archive(stream).unwrap();
-
-    for (name, _) in xp3.entries() {
-        println!("file: {}", name);
+    for entry in xp3.entries() {
+        println!("file: {:?}", entry);
     }
+    Ok(())
 }

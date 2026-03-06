@@ -15,7 +15,7 @@ pub fn main() {
         sample_xp3,
         XP3HeaderVersion::Current {
             minor_version: 1,
-            index_size_offset: 0,
+            index_offset: 0,
         },
         XP3IndexCompression::Compressed,
     )
