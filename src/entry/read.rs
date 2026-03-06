@@ -84,7 +84,7 @@ impl XP3Entries {
 
                     let name_len = ReadBytesExt::read_u16::<LittleEndian>(&mut sub_data)?;
                     entry.name = char::decode_utf16(
-                        sub_data.get_ref()[sub_data.position() as usize..][..name_len as usize]
+                        sub_data.get_ref()[sub_data.position() as usize..][..name_len as usize * 2]
                             .chunks_exact(2)
                             .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]])),
                     )

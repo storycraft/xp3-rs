@@ -80,7 +80,7 @@ fn write_file(
     writer.write_u64::<LittleEndian>(entry.size)?;
     writer.write_u64::<LittleEndian>(entry.archive_size)?;
 
-    writer.write_u16::<LittleEndian>(string_buf.len() as u16 * 2)?;
+    writer.write_u16::<LittleEndian>(string_buf.len() as u16)?;
     for &mut ch in &mut *string_buf {
         writer.write_u16::<LittleEndian>(ch)?;
     }
